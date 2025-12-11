@@ -74,6 +74,7 @@ Extract the following information in JSON format:
   "merchant_name": "extracted name",
   "merchant_address": "extracted address",
   "gst_number": "extracted GST number if present",
+  "diagnosis_or_specialty": "extracted diagnosis OR doctor specialty OR 'Unknown'",
   "date": "YYYY-MM-DD format",
   "patient_name": "extracted if present, else UNKNOWN",
   "line_items": [
@@ -96,10 +97,10 @@ Extract the following information in JSON format:
 **IMPORTANT RULES:**
 1. Be thorough in fraud detection - flag any inconsistencies
 2. Categorize items accurately (Medicine vs Supplement vs Cosmetic is critical)
-3. All amounts must be in Indian Rupees (Rs.)
-4. Date must be in YYYY-MM-DD format
-5. Line items must have complete details
-6. If GST number is missing, flag as suspicious
+3. Look for 'Diagnosis', 'Reason', 'Dr. [Specialty]' to fill diagnosis_or_specialty
+4. All amounts must be in Indian Rupees (Rs.)
+5. Date must be in YYYY-MM-DD format
+6. Line items must have complete details
 7. Output ONLY valid JSON, no additional text
 
 **INDIAN CONTEXT:**

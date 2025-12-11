@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ClaimUpload from './components/ClaimUpload';
 import AnalysisResults from './components/AnalysisResults';
+
+// Backend API URL - uses environment variable or fallback to localhost
+import ClaimHistory from './components/ClaimHistory';
 
 // Backend API URL - uses environment variable or fallback to localhost
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -9,6 +12,29 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [error, setError] = useState(null);
+  const [isOnline, setIsOnline] = useState(false);
+
+  // Check system health
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const res = await fetch(`${API_URL}/health`);
+        setIsOnline(res.ok);
+      } catch (e) {
+        setIsOnline(false);
+      }
+    };
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 5000); // Check every 5s
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleHistoryView = (fullData) => {
+    const transformedData = transformBackendResponse(fullData);
+    setAnalysisResult(transformedData);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleUpload = async (file) => {
     setIsProcessing(true);
@@ -63,10 +89,13 @@ function App() {
       name: decision.item_name,
       quantity: 1, // Backend doesn't return quantity in decisions
       total_price: decision.claimed_amount,
+      approved_amount: decision.approved_amount, // Map approved amount
       category: '', // Backend doesn't return category in decisions
       status: decision.status,
       excluded: decision.status === 'REJECTED',
-      exclusion_reason: decision.status === 'REJECTED' ? decision.reason : null
+      exclusion_reason: decision.status === 'REJECTED' ? decision.reason : null,
+      medical_necessity: decision.medical_necessity, // Map medical flags
+      medical_reason: decision.medical_reason
     }));
 
     // Extract excluded items for the summary section
@@ -119,8 +148,8 @@ function App() {
             </div>
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
-                <span className="w-2 h-2 bg-success-500 rounded-full animate-pulse"></span>
-                System Online
+                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-success-500 animate-pulse' : 'bg-danger-500'}`}></span>
+                {isOnline ? 'System Online' : 'System Offline'}
               </div>
               <div className="px-4 py-2 bg-primary-100 text-primary-700 rounded-lg text-sm font-medium">
                 Assemble Hack 2025
@@ -167,6 +196,9 @@ function App() {
 
             {/* Upload Component */}
             <ClaimUpload onUpload={handleUpload} isProcessing={isProcessing} />
+
+            {/* History Component - Only shown on home screen */}
+            <ClaimHistory onViewClaim={handleHistoryView} />
           </>
         ) : (
           <>
@@ -217,7 +249,7 @@ function App() {
               <h3 className="font-bold text-gray-900 mb-2">Built with</h3>
               <p className="text-sm text-gray-600">
                 React • Tailwind CSS • Python • Kestra<br />
-                Google Gemini • Together AI
+                Cline • Vertex AI
               </p>
             </div>
           </div>

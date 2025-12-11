@@ -99,10 +99,10 @@ tasks:
       - echo "STAGE 4 - POLICY ENGINE"
       - echo "========================================================================"
       - FRAUD_DECISION=$(cat fraud_decision.txt)
-      - STATUS=$(jq -r '.adjudication.status // "UNKNOWN"' result.json)
-      - CLAIMED=$(jq -r '.adjudication.total_claimed // 0' result.json)
-      - APPROVED=$(jq -r '.adjudication.total_approved // 0' result.json)
-      - DEDUCTED=$(jq -r '.adjudication.total_deducted // 0' result.json)
+      - STATUS=$(jq -r '.policy_adjudication.status // "UNKNOWN"' result.json)
+      - CLAIMED=$(jq -r '.policy_adjudication.total_claimed // 0' result.json)
+      - APPROVED=$(jq -r '.policy_adjudication.total_approved // 0' result.json)
+      - DEDUCTED=$(jq -r '.policy_adjudication.total_deducted // 0' result.json)
       - echo "Fraud Decision - $FRAUD_DECISION"
       - echo "Status - $STATUS"
       - echo "Claimed - Rs.$CLAIMED"
@@ -133,10 +133,16 @@ tasks:
       - STATUS=$(jq -r '.policy_status' final_decision.json)
       - CLAIMED=$(jq -r '.total_claimed' final_decision.json)
       - APPROVED=$(jq -r '.total_approved' final_decision.json)
-      - echo "Merchant - $MERCHANT"
-      - echo "Status - $STATUS"
-      - echo "Claimed - Rs.$CLAIMED"
-      - echo "Approved - Rs.$APPROVED"
+      - DIAGNOSIS=$(jq -r '.vision_analysis.diagnosis_or_specialty // "Unknown"' result.json)
+      - echo "Merchant  - $MERCHANT"
+      - echo "Diagnosis - $DIAGNOSIS"
+      - echo "Status    - $STATUS"
+      - echo "Claimed   - Rs.$CLAIMED"
+      - echo "Approved  - Rs.$APPROVED"
+      - echo ""
+      - echo "MEDICAL NECESSITY CHECK (New)"
+      - echo "-----------------------------------"
+      - jq -r '.medical_necessity_check | to_entries[] | "  " + .key + ": " + .value.status + " (" + .value.reason + ")"' result.json
       - echo ""
       - echo "========================================================================"
 
@@ -163,6 +169,7 @@ tasks:
       - CLAIMED=$(jq -r '.total_claimed' final_decision.json)
       - APPROVED=$(jq -r '.total_approved' final_decision.json)
       - DEDUCTED=$(jq -r '.total_deducted' final_decision.json)
+      - DIAGNOSIS=$(jq -r '.vision_analysis.diagnosis_or_specialty // "Unknown"' result.json)
       - echo "+----------------------------------------------------------------------+"
       - echo "|                    EMAIL NOTIFICATION                                |"
       - echo "+----------------------------------------------------------------------+"
@@ -178,6 +185,7 @@ tasks:
       - echo "CLAIM DETAILS"
       - echo "  Merchant - $MERCHANT"
       - echo "  Date - $DATE"
+      - echo "  Diagnosis - $DIAGNOSIS"
       - echo "  Claimed Amount - Rs.$CLAIMED"
       - echo ""
       - echo "DECISION"
@@ -197,11 +205,13 @@ tasks:
       - echo "ALL 6 STAGES COMPLETE"
       - echo "========================================================================"
       - echo "Stage 1 - File Validation      [DONE]"
-      - echo "Stage 2 - Vision Agent         [DONE]"
+      - echo "Stage 2 - Vision & Med Judge   [DONE]"
       - echo "Stage 3 - Fraud Evaluation     [DONE]"
       - echo "Stage 4 - Policy Engine        [DONE]"
       - echo "Stage 5 - Generate Report      [DONE]"
       - echo "Stage 6 - Send Notification    [DONE]"
+      - echo "========================================================================"
+      - echo "Powered by Kestra + OpenAI | Assemble Hack 2025"
       - echo "========================================================================"
       - echo "Powered by Kestra + OpenAI | Assemble Hack 2025"
       - echo "========================================================================"

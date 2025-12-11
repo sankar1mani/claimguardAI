@@ -35,31 +35,26 @@ const AnalysisResults = ({ result }) => {
   // Calculate totals
   const totalClaimed = result.total_amount || result.subtotal || 0;
   const lineItems = result.line_items || [];
-  
-  // Calculate approved and rejected amounts from line items
-  let totalApproved = 0;
-  let totalRejected = 0;
-  
-  lineItems.forEach(item => {
-    const price = item.total_price || 0;
-    if (item.excluded || item.status === 'REJECTED') {
-      totalRejected += price;
-    } else {
-      totalApproved += price;
-    }
-  });
+
+  // Use backend provided totals if available, otherwise calculate
+  const totalApproved = result.approved_amount !== undefined ? result.approved_amount :
+    lineItems.reduce((acc, item) => acc + (item.approved_amount || 0), 0);
+
+  // Calculate rejected amount
+  const totalRejected = result.excluded_amount !== undefined ? result.excluded_amount :
+    (totalClaimed - totalApproved);
 
   const approvalRate = totalClaimed > 0 ? (totalApproved / totalClaimed * 100) : 0;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-slide-up">
-      {/* Status Header */}
+      {/* ... (Status Header skipped for brevity) ... */}
       <div className="card text-center">
         <div className="mb-4">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Claim Analysis Complete</h2>
           <p className="text-gray-600">Claim ID: {result.claim_id || 'N/A'}</p>
         </div>
-        
+
         <div className="mb-6">
           {getStatusBadge(result.status || 'PARTIAL_APPROVAL')}
         </div>
@@ -75,7 +70,7 @@ const AnalysisResults = ({ result }) => {
             <p className="text-2xl font-bold text-success-700">{formatCurrency(totalApproved)}</p>
           </div>
           <div className="bg-danger-50 rounded-lg p-4">
-            <p className="text-sm text-danger-700 mb-1">Total Rejected</p>
+            <p className="text-sm text-danger-700 mb-1">Total Deducted</p>
             <p className="text-2xl font-bold text-danger-700">{formatCurrency(totalRejected)}</p>
           </div>
         </div>
@@ -111,6 +106,15 @@ const AnalysisResults = ({ result }) => {
             <p className="text-sm text-gray-600">Date</p>
             <p className="font-semibold text-gray-900">{result.date || 'N/A'}</p>
           </div>
+          {/* New Diagnosis Field */}
+          {result.diagnosis_or_specialty && (
+            <div>
+              <p className="text-sm text-gray-600">Diagnosis</p>
+              <p className="font-semibold text-blue-900 bg-blue-50 inline-block px-2 rounded">
+                {result.diagnosis_or_specialty}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -123,29 +127,42 @@ const AnalysisResults = ({ result }) => {
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Item</th>
                 <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Qty</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Amount</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Claimed</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Approved</th>
                 <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
               </tr>
             </thead>
             <tbody>
               {lineItems.map((item, index) => {
                 const isRejected = item.excluded || item.status === 'REJECTED';
+                const hasMedicalFlag = item.medical_necessity === 'FLAG';
+
                 return (
                   <tr
                     key={index}
-                    className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                      isRejected ? 'bg-danger-50/50' : 'bg-success-50/20'
-                    }`}
+                    className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${isRejected ? 'bg-danger-50/50' : 'bg-success-50/20'
+                      }`}
                   >
                     <td className="py-3 px-4">
                       <div>
                         <p className="font-medium text-gray-900">{item.name}</p>
+                        {/* Medical Necessity Warning */}
+                        {hasMedicalFlag && (
+                          <p className="text-xs text-warning-700 font-semibold bg-warning-50 inline-block px-1 rounded mt-1 border border-warning-200">
+                            ⚠ Medical Check: {item.medical_reason}
+                          </p>
+                        )}
                         {item.category && (
-                          <p className="text-xs text-gray-500">{item.category}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{item.category}</p>
                         )}
                         {isRejected && item.exclusion_reason && (
                           <p className="text-xs text-danger-600 mt-1">
-                            ⚠ {item.exclusion_reason}
+                            ❌ {item.exclusion_reason}
+                          </p>
+                        )}
+                        {!isRejected && item.approved_amount < item.total_price && (
+                          <p className="text-xs text-orange-600 mt-1">
+                            ✂ Proportionate Deduction Applied
                           </p>
                         )}
                       </div>
@@ -153,8 +170,11 @@ const AnalysisResults = ({ result }) => {
                     <td className="text-center py-3 px-4 text-gray-700">
                       {item.quantity || 1}
                     </td>
-                    <td className="text-right py-3 px-4 font-semibold text-gray-900">
+                    <td className="text-right py-3 px-4 text-gray-500 line-through text-xs sm:text-sm">
                       {formatCurrency(item.total_price || 0)}
+                    </td>
+                    <td className="text-right py-3 px-4 font-bold text-gray-900">
+                      {formatCurrency(item.approved_amount !== undefined ? item.approved_amount : item.total_price)}
                     </td>
                     <td className="text-center py-3 px-4">
                       {getItemStatusBadge(isRejected ? 'REJECTED' : 'APPROVED')}
@@ -168,8 +188,11 @@ const AnalysisResults = ({ result }) => {
                 <td colSpan="2" className="py-4 px-4 text-right font-bold text-gray-900">
                   Total:
                 </td>
-                <td className="py-4 px-4 text-right font-bold text-xl text-gray-900">
+                <td className="py-4 px-4 text-right font-bold text-gray-500 line-through">
                   {formatCurrency(totalClaimed)}
+                </td>
+                <td className="py-4 px-4 text-right font-bold text-xl text-success-700">
+                  {formatCurrency(totalApproved)}
                 </td>
                 <td></td>
               </tr>
