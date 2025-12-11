@@ -11,6 +11,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - DATABASE_URL=postgresql://claimguard:claimguard_secret@db:5432/claimguard
       - TOGETHER_API_KEY=${TOGETHER_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -24,7 +25,10 @@ services:
     networks:
       - claimguard-net
     depends_on:
-      - kestra
+      db:
+        condition: service_healthy
+      kestra:
+        condition: service_started
     command: >
       sh -c "pip install -r requirements.txt &&
              uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
@@ -69,13 +73,35 @@ services:
     networks:
       - claimguard-net
 
+  # =====================================
+  # Database Service - PostgreSQL
+  # =====================================
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=claimguard
+      - POSTGRES_PASSWORD=claimguard_secret
+      - POSTGRES_DB=claimguard
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - claimguard-net
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claimguard -d claimguard"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 # =====================================
-# Volumes for caching
+# Volumes for caching & data
 # =====================================
 volumes:
   backend_cache:
   frontend_modules:
   kestra_data:
+  db_data:
 
 # =====================================
 # Shared Network
