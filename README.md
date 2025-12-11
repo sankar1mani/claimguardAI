@@ -218,32 +218,46 @@ ClaimGuardAI/
 
 ---
 
-## 🛠️ Development
+## 🛠️ Development / Run Locally (No Docker)
 
-### Running Individual Services
+If you don't have Docker, you can run the backend and frontend manually:
 
-**Backend**:
+### 1. Backend (Python)
+The backend will use a local SQLite database automatically.
+
 ```bash
 cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
+# Create virtual environment (optional but recommended)
+python -m venv venv
+# Windows:
+.\venv\Scripts\activate
+# Mac/Linux:
+source venv/bin/activate
 
-**Frontend**:
+# Install dependencies
+pip install -r requirements.txt
+
+# Run server
+# MAKE SURE to set OPENAI_API_KEY environment variable first!
+# Windows (PowerShell): $env:OPENAI_API_KEY="sk-..."
+# Mac/Linux: export OPENAI_API_KEY="sk-..."
+uvicorn main:app --reload --port 8000
+```
+*Backend runs at: http://localhost:8000*
+
+### 2. Frontend (React)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+*Frontend runs at: http://localhost:5173*
 
-**Database**:
-```bash
-docker run -d -p 5432:5432 \
-  -e POSTGRES_USER=claimguard \
-  -e POSTGRES_PASSWORD=claimguard_secret \
-  -e POSTGRES_DB=claimguard \
-  postgres:15-alpine
-```
+*Note: Without Docker, the Kestra workflow engine will not be active, but the core Receipt Analysis, Fraud Detection, and Policy Engine will work perfectly!*
+
+---
+
+### Running Individual Services (Docker)
 
 ---
 
