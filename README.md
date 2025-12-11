@@ -47,26 +47,54 @@ ClaimGuard AI automates the entire insurance claim adjudication process for Indi
 
 ---
 
-## 🏗️ Architecture
+## 🔄 High-Level Process Flow
+
+ClaimGuard AI follows a forensic 4-step adjudication process similar to a human auditor, but in milliseconds.
 
 ```mermaid
 graph LR
-    A[User Uploads Receipt] --> B[Frontend React App]
-    B --> C[FastAPI Backend]
-    C --> D[Kestra Workflow]
-    D --> E[AI Vision Agent]
-    E --> F[OpenAI GPT-4o]
-    F --> G[Policy Engine]
-    G --> H[Final Decision]
-    H --> I[Email Notification]
+    subgraph "Submission"
+    A[📄 Claim Upload]
+    end
+
+    subgraph "Forensic Analysis"
+    B[🔍 AI Digitization] --> C[🛡️ Fraud Detection]
+    end
+
+    subgraph "Adjudication Engine"
+    C --> D{Compliance Check}
+    D -->|Pass| E[📋 Policy Rules]
+    D -->|Fail| F[❌ Auto-Reject]
+    E --> G[💰 Limit Capping]
+    end
+
+    subgraph "Decision"
+    G --> H[✅ Final Settlement]
+    end
+
+    A --> B
 ```
 
-**Tech Stack**:
+### Process Breakdown
+
+1. **Submission**: User uploads a medical receipt (photo or PDF).
+2. **Forensic Analysis**:
+   - **AI Digitization**: Optical Character Recognition (OCR) extracts merchant details, dates, and line items.
+   - **Fraud Detection**: Analyzes image metadata and patterns to detect tampering, photoshop, or duplicate submissions.
+3. **Adjudication Engine**:
+   - **Exclusion Check**: Filters out 85+ non-payable items (cosmetics, supplements).
+   - **Policy Rules**: Applies room rent capping, copay logic, and sum insured limits.
+4. **Decision**: Generates a final approved amount with line-by-line reasoning.
+
+---
+
+## 💻 Technical Stack (For Developers)
+
 - **Frontend**: React + Vite + Tailwind CSS
 - **Backend**: Python FastAPI + PostgreSQL
-- **AI**: OpenAI GPT-4o Vision
-- **Orchestration**: Kestra
-- **Infrastructure**: Docker
+- **AI Core**: OpenAI GPT-4o Vision
+- **Orchestration**: Kestra Workflow Engine
+- **Infrastructure**: Docker Containerization
 
 ---
 
