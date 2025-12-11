@@ -1,77 +1,161 @@
-# ClaimGuard AI - Forensic Adjudication Engine
+# ClaimGuard AI 🏥
+
+> **AI-Powered Insurance Claim Adjudication System**  
+> Process medical claims in seconds with automated fraud detection and policy validation.
 
 [![Assemble Hack 2025](https://img.shields.io/badge/Assemble%20Hack-2025-blue)](https://assemblehack.com)
 [![Kestra](https://img.shields.io/badge/Orchestrated%20with-Kestra-pink)](https://kestra.io)
 [![OpenAI](https://img.shields.io/badge/AI-OpenAI%20GPT--4o-green)](https://openai.com)
 [![Docker](https://img.shields.io/badge/Containerized-Docker-blue)](https://docker.com)
 [![Vercel](https://img.shields.io/badge/Deployed-Vercel-black)](https://vercel.com)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **Automated AI-powered claim adjudication system for Indian Health Insurance.**
->
-> 🚀 **Processing claims in seconds, not days.**
+**🌐 Live Demo**: [Visit ClaimGuard AI](claimguard-q2y5iipuq-sankar1manis-projects.vercel.app)
+---
 
-## 🎯 Project Overview
+## 🎯 What is ClaimGuard AI?
 
-**ClaimGuard AI** is a fully automated Forensic Adjudication Engine that combines **GenAI Vision** with strict **Policy Rule Enforcement**. It solves the problem of manual, error-prone insurance claim processing by automating the entire workflow from receipt upload to final approval.
+ClaimGuard AI automates the entire insurance claim adjudication process for Indian health insurance. Upload a medical receipt, and our AI system:
 
-### Only 3 Steps:
-1.  **AI Vision**: Extracts structured data from receipt images (Medicine names, amounts, dates) using **OpenAI GPT-4o**.
-2.  **Policy Engine**: Validates every single item against **Indian Insurance Policy** rules (Exclusions, Room Rent Capping, Proportionate Deductions).
-3.  **Kestra Workflow**: Orchestrates the entire pipeline, handling file passing, logic flow, and notifications.
+1. **Extracts data** from the receipt using AI vision
+2. **Detects fraud** (tampered receipts, excluded items)
+3. **Applies policy rules** (room rent capping, exclusions)
+4. **Generates decision** (approved/rejected with reasoning)
+
+**Result**: Claims processed in seconds instead of days, with 100% policy compliance.
+
+---
+
+## ✨ Key Features
+
+### 🔍 AI Vision & Fraud Detection
+- Extracts structured data from receipt images (medicines, amounts, dates)
+- Detects photoshopped or tampered receipts
+- Identifies duplicate bills
+- Validates mandatory fields (GST, Doctor Registration)
+
+### 📋 Intelligent Policy Engine
+- **Room Rent Capping**: Automatically calculates proportionate deductions
+  - Example: If room rent is ₹8,000 (limit ₹5,000), system deducts 37.5% from entire claim
+- **Exclusion Detection**: Rejects 85+ non-payable items (supplements, cosmetics, etc.)
+- **Medical Necessity Check**: Validates if treatments are medically necessary
+
+### ⚡ Automated Workflow
+- 6-stage pipeline orchestrated by Kestra
+- Real-time execution tracking
+- Automated email notifications
+- Full audit trail
 
 ---
 
 ## 🏗️ Architecture
 
 ```mermaid
-graph TD
-    User[User Upload] -->|React Frontend| Docker[Docker Container]
-    Docker -->|API Call| Backend[FastAPI Backend]
-    
-    subgraph "Kestra Orchestration Engine"
-        Start((Start)) --> Validate[Validate File]
-        Validate --> Vision[AI Vision Agent]
-        Vision --> Fraud[Fraud Detection]
-        Fraud --> Policy[Policy Engine]
-        Policy --> MockEmail[Email Notification]
-    end
-    
-    Backend -->|Trigger Flow| Start
-    Vision -->|OCR & Fraud Check| OpenAI[OpenAI GPT-4o]
-    Policy -->|Rules| JSON[Policy Rules]
+graph LR
+    A[User Uploads Receipt] --> B[Frontend React App]
+    B --> C[FastAPI Backend]
+    C --> D[Kestra Workflow]
+    D --> E[AI Vision Agent]
+    E --> F[OpenAI GPT-4o]
+    F --> G[Policy Engine]
+    G --> H[Final Decision]
+    H --> I[Email Notification]
+```
+
+**Tech Stack**:
+- **Frontend**: React + Vite + Tailwind CSS
+- **Backend**: Python FastAPI + PostgreSQL
+- **AI**: OpenAI GPT-4o Vision
+- **Orchestration**: Kestra
+- **Infrastructure**: Docker
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Docker Desktop installed ([Download](https://www.docker.com/products/docker-desktop))
+- OpenAI API Key ([Get one here](https://platform.openai.com/api-keys))
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/sankar1mani/claimguardAI.git
+   cd claimguardAI
+   ```
+
+2. **Set up environment variables**
+   ```bash
+   cd docker
+   cp .env.example .env
+   ```
+   
+   Edit `.env` and add your OpenAI API key:
+   ```env
+   OPENAI_API_KEY=sk-your-api-key-here
+   ```
+
+3. **Start the application**
+   ```bash
+   docker compose up
+   ```
+
+4. **Access the services**
+   - **Frontend**: http://localhost:5173
+   - **Kestra UI**: http://localhost:8080
+   - **Backend API**: http://localhost:8000/docs
+   - **Database**: localhost:5432
+
+> **💡 Prefer not to install?** Try our [live demo on Vercel](https://your-vercel-url.vercel.app) _(Replace with your actual URL)_
+
+---
+
+## 📖 Usage
+
+### Via Live Demo (No Installation Required)
+Visit our [Vercel deployment](https://your-vercel-url.vercel.app) to try ClaimGuard AI without any setup!
+
+### Via Frontend (Local)
+1. Open http://localhost:5173
+2. Upload a medical receipt image
+3. Enter patient details and sum insured
+4. Click "Process Claim"
+5. View results with detailed breakdown
+
+### Via Kestra UI
+1. Open http://localhost:8080
+2. Navigate to **Flows** → `claimguard.insurance` → `claim-adjudication-flow`
+3. Click **Execute**
+4. Upload receipt and set parameters
+5. Watch the 6-stage pipeline execute in real-time
+
+### Via API
+```bash
+curl -X POST http://localhost:8000/api/analyze \
+  -F "file=@receipt.jpg" \
+  -F "sum_insured=500000"
 ```
 
 ---
 
-## 🚀 Features
+## 🧪 Test Scenarios
 
-### ✅ 1. AI-Powered Fraud Detection
--   Detects **photoshopped** receipts (pixel inconsistencies)
--   Identifies **duplicate** or tampered bills
--   Flags **missing mandatory fields** (GST, Doctor Reg No.)
+We've included test data in the `data/` folder:
 
-### ✅ 2. Complex Policy Math
--   **Room Rent Capping**: Automatically calculates proportionate deductions if room rent > 1% of Sum Insured.
-    -   *Example: If room rent is ₹8,000 (limit ₹5,000), system deducts 37.5% from ENTIRE claim.*
--   **Exclusion Logic**: Automatically rejects 85+ non-payable items (Supplements, Cosmetics, Diapers, etc.).
+### ✅ Scenario 1: Valid Claim
+- **File**: `data/claim_valid.json`
+- **Expected**: APPROVED - All items are valid medicines
+- **Amount**: ₹495 approved
 
-### ✅ 3. Full Orchestration
--   **Kestra** manages the 6-stage pipeline.
--   **Dockerized** for instant deployment.
--   **Vercel-ready** frontend.
+### ⚠️ Scenario 2: Exclusion Fraud
+- **File**: `data/claim_fraud_exclusion.json`
+- **Expected**: PARTIAL APPROVAL - Supplements rejected
+- **Amount**: ₹570 approved, ₹2,949 rejected (Whey Protein + Moisturizer)
 
----
-
-## 🛠️ Technology Stack
-
-| Component | Technology | Role |
-|-----------|------------|------|
-| **Orchestration** | **Kestra** | Workflow management, state handling, retries |
-| **AI Vision** | **OpenAI GPT-4o** | OCR, Data Extraction, Visual Fraud Check |
-| **Backend** | **Python (FastAPI)** | API, Policy Logic, Math Engine |
-| **Frontend** | **React + Vite** | User Interface (Deployed on Vercel) |
-| **Infrastructure** | **Docker** | Containerization & Networking |
+### ✂️ Scenario 3: Room Rent Capping
+- **File**: `data/claim_fraud_limit.json`
+- **Expected**: PARTIAL APPROVAL - Proportionate deduction applied
+- **Amount**: ₹78,437.50 approved (62.5% ratio due to room rent limit)
 
 ---
 
@@ -79,107 +163,136 @@ graph TD
 
 ```
 ClaimGuardAI/
-├── backend/                 # FastAPI Application
-│   ├── vision_agent.py      # OpenAI Integration
-│   ├── policy_engine.py     # Rule Engine Logic
-│   └── main.py              # API Endpoints
+├── backend/                 # FastAPI application
+│   ├── main.py             # API endpoints
+│   ├── vision_agent.py     # OpenAI integration
+│   ├── policy_engine.py    # Policy rules engine
+│   └── requirements.txt    # Python dependencies
 │
-├── frontend/                # React Application
-│   ├── src/                 # Components & Pages
-│   └── vercel.json          # Deployment Config
+├── frontend/               # React application
+│   ├── src/
+│   │   ├── components/     # UI components
+│   │   └── pages/          # Page components
+│   └── package.json
 │
-├── kestra/                  # Orchestration
-│   └── insurance_flow.yaml  # 6-Stage Workflow Definition
+├── kestra/                 # Workflow orchestration
+│   ├── insurance_flow.yaml # 6-stage workflow definition
+│   └── README.md           # Kestra setup guide
 │
-├── docker/                  # Infrastructure
-│   └── docker-compose.yml   # Full Stack Setup
+├── docker/                 # Docker configuration
+│   ├── docker-compose.yml  # Full stack setup
+│   └── .env.example        # Environment template
 │
-└── data/                    # Rules & Rulesets
-    ├── policy_rules.json    # Configurable Insurance Rules
-    └── claim_valid.json     # Test Data
+└── data/                   # Test data & rules
+    ├── policy_rules.json   # Insurance policy rules
+    └── claim_*.json        # Test claim files
 ```
 
 ---
 
-## ⚡ Quick Start (Docker)
+## 🛠️ Development
 
-The easiest way to run ClaimGuard AI is using Docker.
+### Running Individual Services
 
-### 1. Prerequisites
--   Docker Desktop installed
--   OpenAI API Key
-
-### 2. Setup
-
-Create a `.env` file in the `docker/` directory:
-
-```env
-OPENAI_API_KEY=sk-your-openai-key-here
-```
-
-### 3. Run
-
-```bash
-cd docker
-docker compose up
-```
-
-Access the application:
--   **Frontend**: `http://localhost:5173`
--   **Kestra UI**: `http://localhost:8080`
--   **Backend API**: `http://localhost:8000/docs`
-
----
-
-## 🧪 Testing Scenarios
-
-We have included test data to demonstrate specific capabilities:
-
-### Scenario 1: **Clean Claim**
--   Upload `data/claim_valid.json` (mock receipt)
--   **Result**: ✅ **APPROVED** (All items payable)
-
-### Scenario 2: **Exclusion Fraud**
--   Upload a receipt with "Whey Protein" and "Moisturizer"
--   **Result**: ⚠️ **PARTIALLY APPROVED** (Medicines paid, supplements rejected automatically)
-
-### Scenario 3: **Room Rent Deviation**
--   Upload a receipt with high room rent
--   **Result**: ✂️ **PROPORTIONATE DEDUCTION** (Claim reduced by calculated ratio)
-
----
-
-## 👨‍💻 Developer Guide
-
-### Running without Docker
-
-**Backend:**
+**Backend**:
 ```bash
 cd backend
 pip install -r requirements.txt
-python main.py
+uvicorn main:app --reload
 ```
 
-**Frontend:**
+**Frontend**:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-**Kestra:**
-(Requires Java 21+ or use Docker)
+**Database**:
+```bash
+docker run -d -p 5432:5432 \
+  -e POSTGRES_USER=claimguard \
+  -e POSTGRES_PASSWORD=claimguard_secret \
+  -e POSTGRES_DB=claimguard \
+  postgres:15-alpine
+```
 
 ---
 
-## 🏆 Hackathon Notes
-**Assemble Hack 2025 Submission**
+## 🔧 Configuration
 
--   **CodeRabbit**: Integrated for code review.
--   **Vercel**: Frontend configuration ready.
--   **Kestra**: Core orchestration engine.
+### Environment Variables
+
+Create a `.env` file in the `docker/` directory:
+
+```env
+# Required
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# Optional (defaults shown)
+DATABASE_URL=postgresql://claimguard:claimguard_secret@db:5432/claimguard
+KESTRA_URL=http://kestra:8080
+```
+
+### Policy Rules
+
+Edit `data/policy_rules.json` to customize:
+- Excluded items list
+- Room rent percentage limit
+- Medical necessity criteria
+- Deduction rules
+
+---
+
+## 📊 How It Works
+
+### 6-Stage Pipeline
+
+1. **File Validation**: Validates uploaded receipt
+2. **AI Vision Agent**: Extracts data using OpenAI GPT-4o
+3. **Fraud Detection**: Checks for tampering and duplicates
+4. **Policy Engine**: Applies insurance rules
+5. **Report Generation**: Creates detailed claim report
+6. **Notification**: Sends email (mock) with decision
+
+### Policy Rules Applied
+
+- **Exclusions**: 85+ items automatically rejected (supplements, cosmetics, etc.)
+- **Room Rent Capping**: If > 1% of sum insured, proportionate deduction applied
+- **Medical Necessity**: Validates if treatment is medically required
+- **GST Handling**: GST excluded from reimbursement
+
+---
+
+## 🤝 Contributing
+
+This project was built for **Assemble Hack 2025**. Contributions are welcome!
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ---
 
 ## 📝 License
-MIT License
+
+MIT License - see [LICENSE](LICENSE) file for details
+
+---
+
+## 🙏 Acknowledgments
+
+- **Assemble Hack 2025** for the opportunity
+- **Kestra** for the powerful orchestration platform
+- **OpenAI** for GPT-4o Vision API
+- **CodeRabbit** for code review integration
+
+---
+
+## 📧 Contact
+
+For questions or support, please open an issue on GitHub.
+
+**Built with ❤️ for Assemble Hack 2025**
