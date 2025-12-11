@@ -1,0 +1,86 @@
+# ClaimGuard AI - Docker Compose Configuration
+# Run with: docker compose up
+
+services:
+  # =====================================
+  # Backend Service - FastAPI + Python
+  # =====================================
+  backend:
+    image: python:3.10-slim
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    environment:
+      - TOGETHER_API_KEY=${TOGETHER_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - KESTRA_URL=http://kestra:8080
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ../backend:/app
+      - ../data:/app/data:ro
+      - backend_cache:/root/.cache/pip
+    networks:
+      - claimguard-net
+    depends_on:
+      - kestra
+    command: >
+      sh -c "pip install -r requirements.txt &&
+             uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+
+  # =====================================
+  # Frontend Service - React + Vite
+  # =====================================
+  frontend:
+    image: node:18-alpine
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../frontend:/app
+      - frontend_modules:/app/node_modules
+    networks:
+      - claimguard-net
+    depends_on:
+      - backend
+    command: >
+      sh -c "npm install && npm run dev -- --host"
+
+  # =====================================
+  # Kestra Service - Workflow Orchestration
+  # =====================================
+  kestra:
+    image: kestra/kestra:latest
+    ports:
+      - "8080:8080"
+    user: "root"
+    command: server local --flow-path=/app/flows
+    environment:
+      - TOGETHER_API_KEY=${TOGETHER_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ../kestra:/app/flows
+      - ../backend:/app/backend:ro
+      - ../data:/app/claimguard_data:ro
+      - kestra_data:/app/storage
+      - //var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - claimguard-net
+
+# =====================================
+# Volumes for caching
+# =====================================
+volumes:
+  backend_cache:
+  frontend_modules:
+  kestra_data:
+
+# =====================================
+# Shared Network
+# =====================================
+networks:
+  claimguard-net:
+    driver: bridge
+

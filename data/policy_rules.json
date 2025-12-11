@@ -1,0 +1,341 @@
+{
+  "policy_name": "Indian Health Insurance Policy - Strict Rules",
+  "policy_version": "1.0",
+  "effective_date": "2025-01-01",
+  "description": "Comprehensive policy rules for health insurance claim adjudication with fraud detection and exclusion management",
+  
+  "sum_insured_limits": {
+    "individual": 500000,
+    "family_floater": 1000000,
+    "senior_citizen": 300000
+  },
+  
+  "room_rent_rules": {
+    "description": "Room rent capping based on sum insured percentage",
+    "allowed_percentage": 1,
+    "calculation_note": "If actual room rent > 1% of Sum Insured, apply proportionate deduction",
+    "formula": "(Allowed Limit / Actual Rent) * Claim Amount = Payable Amount",
+    "examples": [
+      {
+        "sum_insured": 500000,
+        "allowed_room_rent_per_day": 5000,
+        "actual_room_rent_per_day": 8000,
+        "claim_amount": 100000,
+        "payable_amount": 62500,
+        "deduction": 37500,
+        "explanation": "(5000 / 8000) * 100000 = 62500"
+      }
+    ]
+  },
+  
+  "excluded_items": {
+    "description": "Items that are automatically rejected from claims",
+    "categories": [
+      {
+        "category": "Dietary Supplements",
+        "items": [
+          "Protein Powder",
+          "Whey Protein",
+          "Mass Gainer",
+          "Nutritional Supplements",
+          "Vitamin Supplements",
+          "Mineral Supplements",
+          "Health Supplements",
+          "Food Supplements",
+          "Dietary Supplements",
+          "Protein Supplements",
+          "Amino Acids",
+          "Pre-Workout Supplements",
+          "Post-Workout Supplements"
+        ],
+        "reason": "Wellness and fitness supplements are not covered"
+      },
+      {
+        "category": "Cosmetics & Personal Care",
+        "items": [
+          "Cosmetics",
+          "Beauty Products",
+          "Moisturizer",
+          "Face Cream",
+          "Body Lotion",
+          "Shampoo",
+          "Conditioner",
+          "Soap",
+          "Talcum Powder",
+          "Perfume",
+          "Deodorant",
+          "Hair Oil",
+          "Fairness Cream",
+          "Anti-Aging Cream"
+        ],
+        "reason": "Cosmetic and toiletry items are not medical necessities"
+      },
+      {
+        "category": "Non-Medical Consumables",
+        "items": [
+          "Diapers (Adult)",
+          "Baby Diapers",
+          "Sanitary Napkins",
+          "Tissues",
+          "Wet Wipes",
+          "Cotton Buds",
+          "Cotton Balls",
+          "Toothpaste",
+          "Toothbrush",
+          "Mouthwash"
+        ],
+        "reason": "Personal hygiene items are not covered under medical insurance"
+      },
+      {
+        "category": "Comfort Items",
+        "items": [
+          "Pillow",
+          "Cushion",
+          "Mattress",
+          "Bed Sheet",
+          "Blanket",
+          "Towels",
+          "Slippers",
+          "Patient Gown (Non-Surgical)",
+          "Feeding Bottle",
+          "Sipper"
+        ],
+        "reason": "Comfort and convenience items are excluded"
+      },
+      {
+        "category": "Ayurvedic/Alternative Medicine (Unapproved)",
+        "items": [
+          "Ayurvedic Medicines (Non-Certified)",
+          "Homeopathic Medicines",
+          "Unani Medicines",
+          "Herbal Supplements",
+          "Traditional Medicines",
+          "Alternative Therapies"
+        ],
+        "reason": "Only allopathic medicines and certified AYUSH treatments covered"
+      },
+      {
+        "category": "Administrative & Documentation",
+        "items": [
+          "Birth Certificate Fee",
+          "Death Certificate Fee",
+          "Medical Certificate Fee",
+          "Photocopying Charges",
+          "Documentation Charges",
+          "Administrative Charges",
+          "Registration Fee",
+          "Medical Record Charges"
+        ],
+        "reason": "Administrative fees are patient responsibility"
+      },
+      {
+        "category": "Food & Beverages",
+        "items": [
+          "Special Diet Food",
+          "Milk",
+          "Juice",
+          "Tea",
+          "Coffee",
+          "Mineral Water",
+          "Energy Drinks",
+          "Food Supplements"
+        ],
+        "reason": "General food and beverage items not covered except prescribed therapeutic diets"
+      }
+    ],
+    "partial_match_keywords": [
+      "supplement",
+      "cosmetic",
+      "beauty",
+      "toiletry",
+      "hygiene",
+      "comfort",
+      "convenience",
+      "non-medical"
+    ]
+  },
+  
+  "fraud_detection_rules": {
+    "visual_checks": [
+      {
+        "check_type": "date_tampering",
+        "description": "Detect if receipt date has been digitally altered or photoshopped",
+        "action": "AUTO_REJECT",
+        "confidence_threshold": 0.7
+      },
+      {
+        "check_type": "duplicate_receipt",
+        "description": "Check if the same receipt has been submitted before",
+        "action": "AUTO_REJECT",
+        "confidence_threshold": 0.9
+      },
+      {
+        "check_type": "blurred_amount",
+        "description": "Detect if amount section is intentionally blurred or unclear",
+        "action": "MANUAL_REVIEW",
+        "confidence_threshold": 0.6
+      },
+      {
+        "check_type": "inconsistent_font",
+        "description": "Check for multiple font types indicating tampering",
+        "action": "MANUAL_REVIEW",
+        "confidence_threshold": 0.75
+      },
+      {
+        "check_type": "missing_mandatory_fields",
+        "description": "Verify presence of pharmacy/hospital name, address, GST number, date",
+        "action": "AUTO_REJECT",
+        "confidence_threshold": 1.0
+      }
+    ],
+    "timestamp_validation": {
+      "max_claim_submission_days": 30,
+      "description": "Claims must be submitted within 30 days of discharge/purchase",
+      "action_if_exceeded": "AUTO_REJECT"
+    }
+  },
+  
+  "claim_approval_thresholds": {
+    "auto_approve_limit": 5000,
+    "manual_review_range": {
+      "min": 5001,
+      "max": 50000
+    },
+    "senior_review_threshold": 50001,
+    "description": "Claims under ₹5,000 with no red flags are auto-approved"
+  },
+  
+  "pharmacy_specific_rules": {
+    "description": "Rules specific to pharmacy reimbursement claims",
+    "requirements": [
+      "Original cash receipt required",
+      "Valid prescription from registered medical practitioner",
+      "Medicine must be part of treatment for covered illness/injury",
+      "GST invoice with pharmacy details mandatory"
+    ],
+    "excluded_pharmacy_items": [
+      "Over-the-counter supplements",
+      "Cosmetic creams",
+      "General wellness products"
+    ]
+  },
+  
+  "diagnostics_specific_rules": {
+    "description": "Rules specific to diagnostic test reimbursement",
+    "requirements": [
+      "Doctor's prescription/referral required",
+      "Test must be medically necessary",
+      "Pathology lab must be certified",
+      "Original invoice with lab registration number"
+    ],
+    "covered_tests": [
+      "Blood Tests",
+      "Imaging (X-Ray, CT Scan, MRI, Ultrasound)",
+      "ECG/EEG",
+      "Biopsy",
+      "Pathology Tests"
+    ],
+    "excluded_tests": [
+      "Routine health checkups (pre-existing)",
+      "Fitness tests",
+      "Non-prescription tests",
+      "Experimental diagnostics"
+    ]
+  },
+  
+  "deduction_rules": {
+    "copayment": {
+      "standard": 10,
+      "senior_citizen": 20,
+      "description": "Percentage of claim amount to be borne by insured"
+    },
+    "sub_limits": {
+      "pharmacy": {
+        "per_claim_limit": 25000,
+        "annual_limit": 100000
+      },
+      "diagnostics": {
+        "per_claim_limit": 15000,
+        "annual_limit": 75000
+      }
+    }
+  },
+  
+  "waiting_periods": {
+    "initial_waiting_period": 30,
+    "pre_existing_diseases": 730,
+    "specific_diseases": [
+      {
+        "disease": "Diabetes",
+        "waiting_days": 730
+      },
+      {
+        "disease": "Hypertension",
+        "waiting_days": 730
+      },
+      {
+        "disease": "Arthritis",
+        "waiting_days": 730
+      }
+    ]
+  },
+  
+  "document_requirements": {
+    "mandatory": [
+      "Original bills and receipts",
+      "Discharge summary (for hospitalization)",
+      "Prescription from registered doctor",
+      "Diagnostic reports",
+      "Identity proof",
+      "Claim form (duly filled and signed)"
+    ],
+    "optional": [
+      "Medical history",
+      "Previous treatment records",
+      "Referral letters"
+    ]
+  },
+  
+  "claim_processing_workflow": {
+    "steps": [
+      {
+        "step": 1,
+        "name": "Document Upload",
+        "description": "User uploads bills, receipts, and supporting documents"
+      },
+      {
+        "step": 2,
+        "name": "Visual Fraud Check",
+        "description": "AI Vision Agent scans for tampering, duplicates, and authenticity"
+      },
+      {
+        "step": 3,
+        "name": "Policy Compliance Check",
+        "description": "Policy Agent validates against room rent caps, exclusions, and limits"
+      },
+      {
+        "step": 4,
+        "name": "Amount Calculation",
+        "description": "Calculate payable amount after deductions and exclusions"
+      },
+      {
+        "step": 5,
+        "name": "Approval/Rejection",
+        "description": "Auto-approve, reject, or route to manual review"
+      }
+    ]
+  },
+  
+  "rejection_reasons": [
+    "Excluded item found in claim",
+    "Receipt tampering detected",
+    "Duplicate claim submission",
+    "Room rent exceeds allowed limit (proportionate deduction applied)",
+    "Missing mandatory documents",
+    "Claim submitted beyond time limit",
+    "Non-covered service/treatment",
+    "Pre-existing disease within waiting period",
+    "Invalid or unverified provider",
+    "Insufficient documentation"
+  ]
+}
