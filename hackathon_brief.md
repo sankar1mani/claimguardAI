@@ -7,7 +7,7 @@ Target Audience: Post-hospitalization claims (Pharmacy, Diagnostics) which have 
 ## 🏗 Tech Stack (The "Infinity Stones")
 1. **Orchestrator:** Kestra (Manages the flow: Upload -> Vision Check -> Policy Check -> Payout)
 2. **Frontend:** Vercel (React + Tailwind for users to upload bills)
-3. **AI Logic:** Python Scripts (using Together AI or Gemini)
+3. **AI Logic:** Python Scripts (using OpenAI)
 4. **Developer:** Cline (You are building this!)
 
 ## 🧠 The Business Logic (Crucial)

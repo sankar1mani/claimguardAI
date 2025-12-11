@@ -12,8 +12,6 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://claimguard:claimguard_secret@db:5432/claimguard
-      - TOGETHER_API_KEY=${TOGETHER_API_KEY}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - KESTRA_URL=http://kestra:8080
       - PYTHONDONTWRITEBYTECODE=1
@@ -61,9 +59,8 @@ services:
     user: "root"
     command: server local --flow-path=/app/flows
     environment:
-      - TOGETHER_API_KEY=${TOGETHER_API_KEY}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on: []
     volumes:
       - ../kestra:/app/flows
       - ../backend:/app/backend:ro

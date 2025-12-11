@@ -142,7 +142,7 @@ tasks:
       - echo ""
       - echo "MEDICAL NECESSITY CHECK (New)"
       - echo "-----------------------------------"
-      - jq -r '.medical_necessity_check | to_entries[] | "  " + .key + ": " + .value.status + " (" + .value.reason + ")"' result.json
+      - jq -r '.medical_necessity_check // {} | to_entries[] | "  \(.key): \(.value.status) (\(.value.reason))"' result.json 2>/dev/null || echo "  No medical necessity data available"
       - echo ""
       - echo "========================================================================"
 
