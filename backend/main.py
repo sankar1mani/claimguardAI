@@ -140,38 +140,63 @@ async def analyze_receipt(
     temp_json_path = None
     
     try:
-        # Validate file type
-        if not file.content_type or not file.content_type.startswith('image/'):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid file type. Expected image, got {file.content_type}"
-            )
+        # Check if file is JSON (test data) or image
+        is_json_test = file.content_type == 'application/json' or (file.filename and file.filename.endswith('.json'))
         
-        # Create temporary file for the uploaded image
-        suffix = Path(file.filename).suffix if file.filename else '.jpg'
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-            # Save uploaded file to temporary location
-            shutil.copyfileobj(file.file, temp_file)
-            temp_image_path = temp_file.name
-        
-        print(f"\n{'='*80}")
-        print("CLAIMGUARD AI - PROCESSING REQUEST")
-        print(f"{'='*80}")
-        print(f"File: {file.filename}")
-        print(f"Size: {os.path.getsize(temp_image_path)} bytes")
-        print(f"Type: {file.content_type}")
-        print(f"{'='*80}\n")
-        
-        # STEP 1: Vision Agent - Extract structured data from receipt
-        print("STEP 1: Vision Agent Analysis")
-        print("-" * 80)
-        vision_result = vision_agent.process_receipt(temp_image_path)
-        
-        if not vision_result:
-            raise HTTPException(
-                status_code=500,
-                detail="Vision agent failed to process the receipt"
-            )
+        if is_json_test:
+            # Handle JSON test file - load directly as vision result
+            print(f"\n{'='*80}")
+            print("CLAIMGUARD AI - PROCESSING TEST DATA (JSON)")
+            print(f"{'='*80}")
+            print(f"File: {file.filename}")
+            print(f"Type: JSON Test Data")
+            print(f"{'='*80}\n")
+            
+            # Read JSON content
+            content = await file.read()
+            vision_result = json.loads(content)
+            
+            print("STEP 1: Vision Agent Analysis (TEST MODE)")
+            print("-" * 80)
+            print(f"Using test data from JSON file")
+            print(f"   Merchant: {vision_result.get('merchant_name', 'N/A')}")
+            print(f"   Total: Rs.{vision_result.get('total_amount', 0):,.2f}")
+            print(f"   Items: {len(vision_result.get('line_items', []))}")
+            print(f"   Fraud Risk: {vision_result.get('fraud_detection', {}).get('recommendation', 'N/A')}\n")
+            
+        else:
+            # Validate file type for images
+            if not file.content_type or not file.content_type.startswith('image/'):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid file type. Expected image or JSON, got {file.content_type}"
+                )
+            
+            # Create temporary file for the uploaded image
+            suffix = Path(file.filename).suffix if file.filename else '.jpg'
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+                # Save uploaded file to temporary location
+                shutil.copyfileobj(file.file, temp_file)
+                temp_image_path = temp_file.name
+            
+            print(f"\n{'='*80}")
+            print("CLAIMGUARD AI - PROCESSING REQUEST")
+            print(f"{'='*80}")
+            print(f"File: {file.filename}")
+            print(f"Size: {os.path.getsize(temp_image_path)} bytes")
+            print(f"Type: {file.content_type}")
+            print(f"{'='*80}\n")
+            
+            # STEP 1: Vision Agent - Extract structured data from receipt
+            print("STEP 1: Vision Agent Analysis")
+            print("-" * 80)
+            vision_result = vision_agent.process_receipt(temp_image_path)
+            
+            if not vision_result:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Vision agent failed to process the receipt"
+                )
         
         # STEP 2: Vision analysis complete - Init Medical Judge
         print(f"Vision analysis complete")
@@ -222,7 +247,30 @@ async def analyze_receipt(
         print(f"   Deducted: Rs.{policy_result.get('total_deducted', 0):,.2f}")
         print(f"   Excluded Items: {policy_result.get('excluded_items_count', 0)}\n")
         
-        # STEP 6: Combine results
+        # STEP 6: Fraud Detection Override
+        # If fraud detection recommends REJECT, override policy decision
+        fraud_detection = vision_result.get('fraud_detection', {})
+        fraud_recommendation = fraud_detection.get('recommendation', 'APPROVE')
+        
+        final_status = policy_result.get('status', 'UNKNOWN')
+        final_approved = policy_result.get('total_approved', 0)
+        final_summary = policy_result.get('summary', '')
+        
+        if fraud_recommendation == 'REJECT':
+            print("FRAUD OVERRIDE: Fraud detection recommends REJECT")
+            print("-" * 80)
+            final_status = 'REJECTED'
+            final_approved = 0  # Reject entire claim
+            final_summary = f"[FRAUD DETECTED] Claim rejected due to fraud indicators. {final_summary}"
+            print(f"   Final Status: REJECTED (Fraud Override)")
+            print(f"   Approved Amount: Rs.0.00 (Fraud Override)\n")
+        elif fraud_recommendation == 'MANUAL_REVIEW':
+            print("FRAUD WARNING: Manual review recommended")
+            print("-" * 80)
+            final_summary = f"[MANUAL REVIEW REQUIRED] Suspicious activity detected. {final_summary}"
+            print(f"   Status: {final_status} (Manual Review Flagged)\n")
+        
+        # STEP 7: Combine results
         final_result = {
             "success": True,
             "filename": file.filename,
@@ -238,11 +286,11 @@ async def analyze_receipt(
             "policy_adjudication": policy_result,
             "medical_necessity_check": medical_flags,  # Add full medical check results
             "final_decision": {
-                "status": policy_result.get('status', 'UNKNOWN'),
+                "status": final_status,  # Use fraud-overridden status
                 "total_claimed": policy_result.get('total_claimed', 0),
-                "total_approved": policy_result.get('total_approved', 0),
-                "total_deducted": policy_result.get('total_deducted', 0),
-                "summary": policy_result.get('summary', '')
+                "total_approved": final_approved,  # Use fraud-overridden amount
+                "total_deducted": policy_result.get('total_claimed', 0) - final_approved,
+                "summary": final_summary  # Use fraud-overridden summary
             }
         }
         

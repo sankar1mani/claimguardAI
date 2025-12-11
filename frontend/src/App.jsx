@@ -121,7 +121,8 @@ function App() {
       excluded_items_found: excludedItems,
       excluded_amount: policyResult.total_deducted || 0,
       approved_amount: policyResult.total_approved || 0,
-      reason: policyResult.summary || backendData.final_decision?.summary || 'Analysis complete'
+      reason: policyResult.summary || backendData.final_decision?.summary || 'Analysis complete',
+      fraud_detection: visionAnalysis.fraud_detection || null  // Add fraud detection data
     };
   };
 
