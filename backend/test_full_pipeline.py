@@ -137,7 +137,7 @@ def test_full_pipeline():
     print("[OK] Full pipeline executed successfully!")
     print("\n[NEXT] NEXT STEPS:")
     print("  1. Add real receipt images to test with actual Vision AI")
-    print("  2. Set GEMINI_API_KEY or TOGETHER_API_KEY environment variable")
+    print("  2. Set OPENAI_API_KEY environment variable")
     print("  3. Create Kestra workflows to orchestrate this pipeline")
     print("  4. Build React frontend for user uploads")
     print_separator()

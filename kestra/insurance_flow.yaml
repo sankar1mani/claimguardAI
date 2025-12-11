@@ -2,13 +2,13 @@ id: claim-adjudication-flow
 namespace: claimguard.insurance
 
 description: |
-  ClaimGuard AI - Insurance Claim Adjudication Pipeline
-  6-stage workflow for Assemble Hack 2025
+  Built for Assemble Hack 2025 using Kestra + OpenAI
 
 labels:
   project: ClaimGuard AI
   hackathon: Assemble Hack 2025
-  version: "5.1"
+  version: "5.2"
+
 
 inputs:
   - id: receipt_file
@@ -203,7 +203,7 @@ tasks:
       - echo "Stage 5 - Generate Report      [DONE]"
       - echo "Stage 6 - Send Notification    [DONE]"
       - echo "========================================================================"
-      - echo "Powered by Kestra + Together AI | Assemble Hack 2025"
+      - echo "Powered by Kestra + OpenAI | Assemble Hack 2025"
       - echo "========================================================================"
 
 errors:

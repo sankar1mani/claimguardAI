@@ -11,21 +11,29 @@ This directory contains the **Kestra orchestration workflow** for ClaimGuard AI'
 
 ## 🚀 Quick Start with Kestra
 
-### Option 1: Run with Kestra Server (Recommended for Demo)
+### Option 1: Run with Docker Compose (Recommended)
+
+The easiest way to run the full stack (Frontend, Backend, and Kestra) is using Docker Compose:
+
+```bash
+cd docker
+docker compose up
+```
+
+Access Kestra UI:
+- Open browser: http://localhost:8080
+- You should see the Kestra dashboard
+
+### Option 2: Run with Kestra Server (Standalone)
 
 1. **Install Kestra** (if not already installed)
    ```bash
    # Using Docker (recommended)
    docker run --pull=always --rm -it -p 8080:8080 kestra/kestra:latest server local
-   
-   # OR using Java
-   wget https://github.com/kestra-io/kestra/releases/latest/download/kestra-standalone.jar
-   java -jar kestra-standalone.jar server local
    ```
 
 2. **Access Kestra UI**
    - Open browser: http://localhost:8080
-   - You should see the Kestra dashboard
 
 3. **Import the Workflow**
    - Click on **"Flows"** in the left sidebar
@@ -39,7 +47,6 @@ This directory contains the **Kestra orchestration workflow** for ClaimGuard AI'
    - Click **"Execute"** button
    - Set inputs:
      - `receipt_file`: Upload a receipt image (or use test JSON files)
-     - `api_provider`: Select **"mock"** (for testing without API keys)
      - `sum_insured`: 500000 (or your test amount)
    - Click **"Execute"**
    - Watch the pipeline run in real-time!
@@ -48,8 +55,7 @@ This directory contains the **Kestra orchestration workflow** for ClaimGuard AI'
    - Click on the execution in the **"Executions"** tab
    - View logs for each task (Vision Agent, Policy Engine, Final Decision)
    - Download output files:
-     - `extracted_claim.json`
-     - `adjudication_result.json`
+     - `vision_result.json`
      - `final_decision.json`
 
 ---
@@ -63,11 +69,11 @@ This directory contains the **Kestra orchestration workflow** for ClaimGuard AI'
                      │
                      ▼
 ┌─────────────────────────────────────────────────────┐
-│  TASK 1: Vision Agent                               │
-│  ├─ Analyzes receipt image                          │
+│  TASK 1: Vision Agent API Call                      │
+│  ├─ Calls Backend API Endpoint                      │
 │  ├─ Detects fraud (tampering, duplicates)           │
-│  └─ Extracts structured data                        │
-│  Output: extracted_claim.json                       │
+│  └─ Extracts structured data (OpenAI GPT-4o)        │
+│  Output: vision_result.json                         │
 └────────────────────┬────────────────────────────────┘
                      │
                      ▼
@@ -90,8 +96,8 @@ This directory contains the **Kestra orchestration workflow** for ClaimGuard AI'
                      │
                      ▼
 ┌─────────────────────────────────────────────────────┐
-│  TASK 4: Log Summary                                │
-│  └─ Displays results in Kestra UI                   │
+│  TASK 4: Email Notification (Mock)                  │
+│  └─ Displays formatted email in Kestra logs         │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -101,36 +107,29 @@ This directory contains the **Kestra orchestration workflow** for ClaimGuard AI'
 
 ### Test with Sample Claims
 
-You can test the workflow with the pre-built test claims:
+You can test the workflow with the pre-built test claims found in the `data/` folder.
 
 1. **Valid Claim** (Should Approve)
-   ```
-   File: ../data/claim_valid.json
-   Expected: PARTIAL_APPROVAL - ₹495 approved
-   ```
+   - File: `data/claim_valid.json` (as mock receipt)
+   - Expected: **PARTIAL_APPROVAL** - ₹495 approved
 
 2. **Exclusion Fraud** (Should Partially Reject)
-   ```
-   File: ../data/claim_fraud_exclusion.json
-   Expected: PARTIAL_APPROVAL - ₹570 approved (Whey Protein & Moisturizer rejected)
-   ```
+   - File: `data/claim_fraud_exclusion.json` (as mock receipt)
+   - Expected: **PARTIAL_APPROVAL** - ₹570 approved (Whey Protein & Moisturizer rejected)
 
 3. **Room Rent Limit** (Should Apply Deduction)
-   ```
-   File: ../data/claim_fraud_limit.json
-   Expected: PARTIAL_APPROVAL - ₹78,437.50 approved (62.5% ratio applied)
-   ```
+   - File: `data/claim_fraud_limit.json` (as mock receipt)
+   - Expected: **PARTIAL_APPROVAL** - ₹78,437.50 approved (62.5% ratio applied)
 
 ### Using Mock Mode
 
-The workflow defaults to **mock mode** which:
+The workflow defaults to **mock mode** if no API key is set, which:
 - ✅ Doesn't require API keys
 - ✅ Returns sample data for testing
 - ✅ Perfect for hackathon demos
 
 To enable real AI vision:
-1. Set environment variable: `GEMINI_API_KEY` or `TOGETHER_API_KEY`
-2. Change `api_provider` input to `gemini` or `together` when executing
+1. Set environment variable: `OPENAI_API_KEY` in the backend service (in `docker/docker-compose.yml` or `.env` file).
 
 ---
 
@@ -141,22 +140,18 @@ To enable real AI vision:
 | Input | Type | Description | Default |
 |-------|------|-------------|---------|
 | `receipt_file` | FILE | Receipt image (JPG/PNG) or JSON for testing | Required |
-| `api_provider` | SELECT | Vision provider: `mock`, `gemini`, `together` | `mock` |
+| `patient_name` | STRING | Patient Name | "Policy Holder" |
 | `sum_insured` | FLOAT | Patient's insurance sum (INR) | 500000 |
 
 ### Outputs
 
 Each task produces output files accessible in Kestra UI:
 
-1. **extracted_claim.json**
+1. **vision_result.json**
    - Vision Agent output
    - Contains: merchant info, line items, fraud detection
 
-2. **adjudication_result.json**
-   - Policy Engine output
-   - Contains: approval status, deductions, line-item decisions
-
-3. **final_decision.json**
+2. **final_decision.json**
    - Final decision combining both agents
    - Contains: status, financial summary, reasoning
 
@@ -164,29 +159,13 @@ Each task produces output files accessible in Kestra UI:
 
 ## 🔧 Configuration
 
-### Project Path Configuration
-
-The workflow uses absolute paths configured in the `variables` section:
-
-```yaml
-variables:
-  project_root: "c:/Users/ACER/OneDrive/Documents/Manee/ClaimguardAI"
-  backend_path: "{{vars.project_root}}/backend"
-  data_path: "{{vars.project_root}}/data"
-```
-
-**Important**: Update `project_root` if you clone this project to a different location!
-
 ### Environment Variables
 
-Optional environment variables for AI vision:
+For AI vision capabilities:
 
 ```bash
-# For Google Gemini Vision
-set GEMINI_API_KEY=your_gemini_api_key_here
-
-# For Together AI Vision
-set TOGETHER_API_KEY=your_together_api_key_here
+# OpenAI GPT-4 Vision
+OPENAI_API_KEY=sk-your-openai-api-key-here
 ```
 
 ---
@@ -198,7 +177,7 @@ set TOGETHER_API_KEY=your_together_api_key_here
 **Story**: Patient Rajesh had a respiratory infection, got prescribed medicines
 
 1. Upload `claim_valid.json` as receipt
-2. Set `api_provider` = `mock`
+2. Use default Sum Insured
 3. Execute workflow
 4. **Expected Result**: 
    - Status: PARTIAL_APPROVAL
@@ -229,78 +208,6 @@ set TOGETHER_API_KEY=your_together_api_key_here
    - Proportionate ratio: 62.5% (5000/8000)
    - Approved: ₹78,437.50 instead of ₹1,31,775
    - Complex calculation done automatically!
-
----
-
-## 🛠️ Troubleshooting
-
-### Common Issues
-
-1. **"Backend scripts not found"**
-   - Check `project_root` path in `insurance_flow.yaml`
-   - Ensure backend folder exists with `.py` files
-
-2. **"Policy rules file not found"**
-   - Verify `data/policy_rules.json` exists
-   - Check path configuration in workflow
-
-3. **"Python dependencies missing"**
-   - Run: `cd backend && pip install -r requirements.txt`
-
-4. **"Kestra can't execute Python scripts"**
-   - Ensure Python 3.9+ is installed
-   - Check Docker container has Python (if using Docker)
-
-### Debug Mode
-
-To see detailed logs:
-1. Check each task's **"Logs"** tab in Kestra UI
-2. Look for print statements with emoji indicators
-3. Download output JSON files for inspection
-
----
-
-## 🚀 Production Deployment
-
-For production use (beyond hackathon):
-
-1. **Use Docker for Kestra**
-   ```bash
-   docker-compose up -d
-   ```
-
-2. **Add Database Backend**
-   - Configure PostgreSQL for Kestra
-   - Store claim history
-
-3. **Enable Monitoring**
-   - Set up alerts for failed executions
-   - Track processing times
-
-4. **Scale Workers**
-   - Add more Kestra workers for parallel processing
-   - Queue management for high volume
-
-5. **Secure API Keys**
-   - Use Kestra secrets management
-   - Never hardcode keys in YAML
-
----
-
-## 📚 Additional Resources
-
-- **Kestra Documentation**: https://kestra.io/docs
-- **Python Script Task**: https://kestra.io/plugins/plugin-script-python
-- **ClaimGuard AI Backend**: See `../backend/README.md`
-
----
-
-## 🤝 Support
-
-For issues or questions:
-- Check the main `README.md` in project root
-- Review backend test results: `python backend/test_full_pipeline.py`
-- Kestra community: https://kestra.io/slack
 
 ---
 

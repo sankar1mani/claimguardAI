@@ -3,15 +3,6 @@
 # OpenAI API (Vision API - Primary)
 openai>=1.0.0
 
-# Google Gemini AI (Vision API - Alternative)
-google-generativeai>=0.3.0
-
-# HTTP Requests for Together AI API
-requests>=2.31.0
-
-# Image Processing (required for Gemini Vision)
-Pillow>=10.0.0
-
 # FastAPI Web Framework
 fastapi>=0.104.0
 
@@ -23,27 +14,3 @@ python-multipart>=0.0.6
 
 # Environment variable management
 python-dotenv>=1.0.0
-
-# JSON handling (built-in, but noting for clarity)
-# json - standard library
-
-# Base64 encoding (built-in)
-# base64 - standard library
-
-# Path handling (built-in)
-# pathlib - standard library
-
-# Environment variables (built-in)
-# os - standard library
-
-# Optional: For advanced image processing
-# opencv-python>=4.8.0  # Uncomment if needed for image preprocessing
-
-# Optional: For PDF processing if receipts come as PDFs
-# PyPDF2>=3.0.0  # Uncomment if needed
-# pdf2image>=1.16.0  # Uncomment if needed
-
-# Development dependencies
-# pytest>=7.4.0  # Uncomment for testing
-# black>=23.0.0  # Uncomment for code formatting
-# flake8>=6.0.0  # Uncomment for linting

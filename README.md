@@ -1,380 +1,185 @@
 # ClaimGuard AI - Forensic Adjudication Engine
 
 [![Assemble Hack 2025](https://img.shields.io/badge/Assemble%20Hack-2025-blue)](https://assemblehack.com)
-[![Python](https://img.shields.io/badge/Python-3.9+-green.svg)](https://www.python.org/)
+[![Kestra](https://img.shields.io/badge/Orchestrated%20with-Kestra-pink)](https://kestra.io)
+[![OpenAI](https://img.shields.io/badge/AI-OpenAI%20GPT--4o-green)](https://openai.com)
+[![Docker](https://img.shields.io/badge/Containerized-Docker-blue)](https://docker.com)
+[![Vercel](https://img.shields.io/badge/Deployed-Vercel-black)](https://vercel.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> Automated AI-powered claim adjudication system for Indian Health Insurance targeting post-hospitalization pharmacy and diagnostic reimbursements.
+> **Automated AI-powered claim adjudication system for Indian Health Insurance.**
+>
+> 🚀 **Processing claims in seconds, not days.**
 
 ## 🎯 Project Overview
 
-**ClaimGuard AI** is a Forensic Adjudication Engine that automates the detection of fraud and policy violations in health insurance claims. It combines AI vision analysis with rule-based policy enforcement to process claims in seconds rather than days.
+**ClaimGuard AI** is a fully automated Forensic Adjudication Engine that combines **GenAI Vision** with strict **Policy Rule Enforcement**. It solves the problem of manual, error-prone insurance claim processing by automating the entire workflow from receipt upload to final approval.
 
-### Target Problem
-- **High Volume**: Post-hospitalization pharmacy/diagnostic claims are numerous and tedious to review manually
-- **Soft Fraud**: Patients submitting bills with excluded items (supplements, cosmetics) or manipulated receipts
-- **Complex Rules**: Room rent capping with proportionate deductions is mathematically intensive
-
-### Solution
-An automated 3-stage pipeline:
-1. **Vision Agent**: AI analyzes receipt images for tampering and extracts structured data
-2. **Policy Engine**: Validates claims against strict Indian insurance policy rules
-3. **Kestra Orchestration**: Manages the workflow from upload to final decision
+### Only 3 Steps:
+1.  **AI Vision**: Extracts structured data from receipt images (Medicine names, amounts, dates) using **OpenAI GPT-4o**.
+2.  **Policy Engine**: Validates every single item against **Indian Insurance Policy** rules (Exclusions, Room Rent Capping, Proportionate Deductions).
+3.  **Kestra Workflow**: Orchestrates the entire pipeline, handling file passing, logic flow, and notifications.
 
 ---
 
 ## 🏗️ Architecture
 
+```mermaid
+graph TD
+    User[User Upload] -->|React Frontend| Docker[Docker Container]
+    Docker -->|API Call| Backend[FastAPI Backend]
+    
+    subgraph "Kestra Orchestration Engine"
+        Start((Start)) --> Validate[Validate File]
+        Validate --> Vision[AI Vision Agent]
+        Vision --> Fraud[Fraud Detection]
+        Fraud --> Policy[Policy Engine]
+        Policy --> MockEmail[Email Notification]
+    end
+    
+    Backend -->|Trigger Flow| Start
+    Vision -->|OCR & Fraud Check| OpenAI[OpenAI GPT-4o]
+    Policy -->|Rules| JSON[Policy Rules]
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        USER UPLOADS RECEIPT                       │
-│                      (Frontend - React/Vercel)                    │
-└──────────────────────────┬────────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    KESTRA ORCHESTRATION                          │
-│                   (Workflow Management)                          │
-└──────────────────────────┬────────────────────────────────────────┘
-                           │
-         ┌─────────────────┴─────────────────┐
-         │                                   │
-         ▼                                   ▼
-┌──────────────────┐              ┌──────────────────┐
-│  VISION AGENT    │              │  POLICY ENGINE   │
-│                  │              │                  │
-│ • Fraud Detect   │─────────────>│ • Exclusions     │
-│ • OCR Extract    │   Structured │ • Room Rent Cap  │
-│ • Data Validate  │      Data    │ • Deductions     │
-└──────────────────┘              └──────────────────┘
-         │                                   │
-         └─────────────────┬─────────────────┘
-                           │
-                           ▼
-                  ┌─────────────────┐
-                  │ FINAL DECISION  │
-                  │ (Approve/Reject)│
-                  └─────────────────┘
-```
+
+---
+
+## 🚀 Features
+
+### ✅ 1. AI-Powered Fraud Detection
+-   Detects **photoshopped** receipts (pixel inconsistencies)
+-   Identifies **duplicate** or tampered bills
+-   Flags **missing mandatory fields** (GST, Doctor Reg No.)
+
+### ✅ 2. Complex Policy Math
+-   **Room Rent Capping**: Automatically calculates proportionate deductions if room rent > 1% of Sum Insured.
+    -   *Example: If room rent is ₹8,000 (limit ₹5,000), system deducts 37.5% from ENTIRE claim.*
+-   **Exclusion Logic**: Automatically rejects 85+ non-payable items (Supplements, Cosmetics, Diapers, etc.).
+
+### ✅ 3. Full Orchestration
+-   **Kestra** manages the 6-stage pipeline.
+-   **Dockerized** for instant deployment.
+-   **Vercel-ready** frontend.
+
+---
+
+## 🛠️ Technology Stack
+
+| Component | Technology | Role |
+|-----------|------------|------|
+| **Orchestration** | **Kestra** | Workflow management, state handling, retries |
+| **AI Vision** | **OpenAI GPT-4o** | OCR, Data Extraction, Visual Fraud Check |
+| **Backend** | **Python (FastAPI)** | API, Policy Logic, Math Engine |
+| **Frontend** | **React + Vite** | User Interface (Deployed on Vercel) |
+| **Infrastructure** | **Docker** | Containerization & Networking |
 
 ---
 
 ## 📂 Project Structure
 
 ```
-ClaimguardAI/
-├── backend/
-│   ├── vision_agent.py          # AI Vision analysis (Gemini/Together AI)
-│   ├── policy_engine.py         # Policy validation & rule enforcement
-│   ├── test_engine.py           # Policy engine test suite
-│   ├── test_full_pipeline.py    # Full integration test
-│   └── requirements.txt         # Python dependencies
+ClaimGuardAI/
+├── backend/                 # FastAPI Application
+│   ├── vision_agent.py      # OpenAI Integration
+│   ├── policy_engine.py     # Rule Engine Logic
+│   └── main.py              # API Endpoints
 │
-├── data/
-│   ├── policy_rules.json        # Indian insurance policy rules
-│   ├── claim_valid.json         # Test: Valid pharmacy claim
-│   ├── claim_fraud_exclusion.json  # Test: Has excluded items
-│   └── claim_fraud_limit.json   # Test: Room rent exceeds limit
+├── frontend/                # React Application
+│   ├── src/                 # Components & Pages
+│   └── vercel.json          # Deployment Config
 │
-├── frontend/                    # React app (to be built)
-├── kestra/                      # Workflow YAML files (to be built)
-├── hackathon_brief.md          # Project requirements
-└── README.md                   # This file
+├── kestra/                  # Orchestration
+│   └── insurance_flow.yaml  # 6-Stage Workflow Definition
+│
+├── docker/                  # Infrastructure
+│   └── docker-compose.yml   # Full Stack Setup
+│
+└── data/                    # Rules & Rulesets
+    ├── policy_rules.json    # Configurable Insurance Rules
+    └── claim_valid.json     # Test Data
 ```
 
 ---
 
-## 🚀 Quick Start
+## ⚡ Quick Start (Docker)
 
-### Prerequisites
-- Python 3.9+
-- pip (Python package manager)
-- Optional: Google Gemini API key or Together AI API key
+The easiest way to run ClaimGuard AI is using Docker.
 
-### Installation
+### 1. Prerequisites
+-   Docker Desktop installed
+-   OpenAI API Key
 
-1. **Clone the repository**
+### 2. Setup
+
+Create a `.env` file in the `docker/` directory:
+
+```env
+OPENAI_API_KEY=sk-your-openai-key-here
+```
+
+### 3. Run
+
+```bash
+cd docker
+docker compose up
+```
+
+Access the application:
+-   **Frontend**: `http://localhost:5173`
+-   **Kestra UI**: `http://localhost:8080`
+-   **Backend API**: `http://localhost:8000/docs`
+
+---
+
+## 🧪 Testing Scenarios
+
+We have included test data to demonstrate specific capabilities:
+
+### Scenario 1: **Clean Claim**
+-   Upload `data/claim_valid.json` (mock receipt)
+-   **Result**: ✅ **APPROVED** (All items payable)
+
+### Scenario 2: **Exclusion Fraud**
+-   Upload a receipt with "Whey Protein" and "Moisturizer"
+-   **Result**: ⚠️ **PARTIALLY APPROVED** (Medicines paid, supplements rejected automatically)
+
+### Scenario 3: **Room Rent Deviation**
+-   Upload a receipt with high room rent
+-   **Result**: ✂️ **PROPORTIONATE DEDUCTION** (Claim reduced by calculated ratio)
+
+---
+
+## 👨‍💻 Developer Guide
+
+### Running without Docker
+
+**Backend:**
 ```bash
 cd backend
-```
-
-2. **Install dependencies**
-```bash
 pip install -r requirements.txt
+python main.py
 ```
 
-3. **Set up API keys (Optional for testing)**
+**Frontend:**
 ```bash
-# For Google Gemini
-set GEMINI_API_KEY=your_api_key_here
-
-# OR for Together AI
-set TOGETHER_API_KEY=your_api_key_here
+cd frontend
+npm install
+npm run dev
 ```
 
-4. **Run tests**
-```bash
-# Test policy engine only
-python test_engine.py
-
-# Test full pipeline (Vision + Policy)
-python test_full_pipeline.py
-```
+**Kestra:**
+(Requires Java 21+ or use Docker)
 
 ---
 
-## 🧪 Testing & Validation
+## 🏆 Hackathon Notes
+**Assemble Hack 2025 Submission**
 
-### Test Scenarios
-
-The project includes 3 comprehensive test cases:
-
-#### 1️⃣ **Valid Claim** (`claim_valid.json`)
-- ✅ All legitimate medicines (Paracetamol, Antibiotics, etc.)
-- ✅ No excluded items
-- ✅ Total: ₹519.75 → **Approved: ₹495.00**
-
-#### 2️⃣ **Exclusion Fraud** (`claim_fraud_exclusion.json`)
-- ❌ Contains Whey Protein Powder (₹2,499) - **REJECTED**
-- ❌ Contains Moisturizer Cream (₹450) - **REJECTED**
-- ✅ Legitimate medicines approved (₹570)
-- ✅ Total: ₹3,694.95 → **Approved: ₹570.00**
-
-#### 3️⃣ **Room Rent Limit Exceeded** (`claim_fraud_limit.json`)
-- ⚠️ Room rent: ₹8,000/day (exceeds ₹5,000/day limit)
-- 📊 Proportionate deduction ratio: 62.5% (5000/8000)
-- ✅ Total: ₹1,31,775 → **Approved: ₹78,437.50**
-
-### Running Tests
-
-```bash
-# Test all 3 scenarios through policy engine
-python test_engine.py
-
-# Test complete pipeline (Vision Agent → Policy Engine)
-python test_full_pipeline.py
-```
-
----
-
-## 🧠 Core Components
-
-### 1. Vision Agent (`vision_agent.py`)
-
-**Purpose**: Extract structured data from receipt images using AI vision models
-
-**Features**:
-- ✅ Supports Google Gemini Vision API
-- ✅ Supports Together AI Vision API
-- ✅ Mock mode for testing without API keys
-- ✅ Fraud detection (tampering, duplicates, pixel inconsistencies)
-- ✅ OCR extraction with structured JSON output
-
-**Usage**:
-```bash
-python vision_agent.py receipt.jpg output.json
-```
-
-**Fraud Detection Checks**:
-- Date tampering detection
-- Amount manipulation detection
-- Duplicate receipt identification
-- Blurred/obscured sections flagging
-- Font inconsistency detection
-- Missing mandatory fields (GST, address, etc.)
-
-### 2. Policy Engine (`policy_engine.py`)
-
-**Purpose**: Validate claims against Indian health insurance policy rules
-
-**Features**:
-- ✅ **Exclusion Logic**: Rejects 85+ excluded items across 7 categories
-- ✅ **Room Rent Capping**: Applies proportionate deduction formula
-- ✅ **Detailed Reports**: Line-item decisions with reasons
-- ✅ **JSON Output**: Structured results for downstream processing
-
-**Usage**:
-```bash
-python policy_engine.py ../data/claim_valid.json
-```
-
-**Policy Rules Enforced**:
-
-#### 🚫 Excluded Items (Auto-Reject)
-- Dietary Supplements (Protein Powder, Whey Protein, etc.)
-- Cosmetics & Personal Care (Moisturizers, Shampoos, etc.)
-- Non-Medical Consumables (Diapers, Sanitary Napkins, etc.)
-- Comfort Items (Pillows, Blankets, etc.)
-- Administrative Fees (Documentation charges, etc.)
-- Food & Beverages
-- Unapproved Alternative Medicines
-
-#### 📐 Room Rent Formula
-```
-If (Actual Room Rent > 1% of Sum Insured):
-    Proportionate Ratio = (Allowed Limit / Actual Rent)
-    Payable Amount = Total Claim × Proportionate Ratio
-
-Example:
-    Sum Insured: ₹5,00,000
-    Allowed Room Rent: ₹5,000/day (1%)
-    Actual Room Rent: ₹8,000/day
-    Ratio: 5000/8000 = 0.625 (62.5%)
-    Claim: ₹1,31,775
-    Payable: ₹82,359.38 (₹1,31,775 × 0.625)
-```
-
----
-
-## 📊 Sample Output
-
-### Policy Engine Output
-
-```json
-{
-  "claim_id": "CLM2025002",
-  "status": "PARTIAL_APPROVAL",
-  "total_claimed": 3694.95,
-  "total_approved": 570.00,
-  "total_deducted": 3124.95,
-  "excluded_items_count": 2,
-  "line_item_decisions": [
-    {
-      "item_name": "Whey Protein Powder 1kg",
-      "claimed_amount": 2499.00,
-      "approved_amount": 0.00,
-      "status": "REJECTED",
-      "reason": "Excluded: Dietary Supplements - Wellness and fitness supplements are not covered"
-    },
-    {
-      "item_name": "Paracetamol 650mg",
-      "claimed_amount": 45.00,
-      "approved_amount": 45.00,
-      "status": "APPROVED",
-      "reason": "Approved - complies with policy"
-    }
-  ]
-}
-```
-
----
-
-## 🔑 Key Business Logic
-
-### Soft Fraud Detection
-1. **Visual Fraud**: Photoshopped dates, tampered amounts, duplicate receipts
-2. **Policy Fraud**: Hidden excluded items (supplements disguised as medicines)
-3. **Limit Fraud**: Excessive room rent to claim higher amounts
-
-### Complex Math - Room Rent Capping
-Indian insurance policies cap room rent at 1% of sum insured. If exceeded, **all** claim items are proportionately reduced, not just the room rent.
-
-**Why This Matters**:
-- Manual calculation is error-prone
-- Humans often miss this rule
-- Patients may intentionally choose expensive rooms to game the system
-- Automated enforcement ensures fairness and consistency
-
----
-
-## 🎯 Next Steps
-
-### Phase 1: Backend Complete ✅
-- [x] Policy rules JSON
-- [x] Vision Agent with AI integration
-- [x] Policy Engine with exclusion logic
-- [x] Room rent proportionate deduction
-- [x] Test suite with 3 scenarios
-
-### Phase 2: Frontend (To Do)
-- [ ] React app with Vite
-- [ ] Tailwind CSS styling
-- [ ] File upload component
-- [ ] Results display dashboard
-- [ ] Deploy to Vercel
-
-### Phase 3: Orchestration (To Do)
-- [ ] Kestra workflow YAML
-- [ ] Queue management
-- [ ] Error handling & retries
-- [ ] Notification system
-
-### Phase 4: Production Ready (To Do)
-- [ ] Database integration
-- [ ] User authentication
-- [ ] Audit logging
-- [ ] Performance optimization
-- [ ] Security hardening
-
----
-
-## 🛠️ Technologies Used
-
-| Component | Technology |
-|-----------|------------|
-| **Vision AI** | Google Gemini / Together AI |
-| **Backend** | Python 3.9+ |
-| **Orchestration** | Kestra |
-| **Frontend** | React + Vite + Tailwind CSS |
-| **Deployment** | Vercel (Frontend) |
-| **Testing** | Pytest (planned) |
-
----
-
-## 📈 Impact & Benefits
-
-### For Insurance Companies
-- ⚡ **Speed**: Process claims in seconds vs days
-- 💰 **Cost Savings**: Reduce manual adjudication costs by 70%+
-- 🎯 **Accuracy**: Eliminate human error in complex calculations
-- 🛡️ **Fraud Prevention**: Detect sophisticated fraud patterns
-
-### For Patients
-- ⏱️ **Faster Payouts**: Instant approval for valid claims
-- 📊 **Transparency**: Clear breakdown of what's approved/rejected
-- 🔄 **Consistency**: Same rules applied to everyone fairly
-
----
-
-## 🤝 Contributing
-
-This is a hackathon project for **Assemble Hack 2025**. Contributions, feedback, and suggestions are welcome!
+-   **CodeRabbit**: Integrated for code review.
+-   **Vercel**: Frontend configuration ready.
+-   **Kestra**: Core orchestration engine.
 
 ---
 
 ## 📝 License
-
-MIT License - See LICENSE file for details
-
----
-
-## 👨‍💻 Developer Notes
-
-### Mock Mode
-The Vision Agent operates in **mock mode** when no API keys are configured. It returns sample data from `claim_valid.json` for testing purposes.
-
-To enable real AI vision:
-```bash
-set GEMINI_API_KEY=your_key_here
-# OR
-set TOGETHER_API_KEY=your_key_here
-```
-
-### Adding New Policy Rules
-Edit `data/policy_rules.json` to add:
-- New excluded items
-- Updated room rent percentages
-- New claim thresholds
-- Additional fraud checks
-
----
-
-## 📞 Contact & Support
-
-**Project**: ClaimGuard AI  
-**Hackathon**: Assemble Hack 2025  
-**Built with**: ❤️ and lots of ☕
-
----
-
-**⭐ Star this repo if you found it useful!**
+MIT License

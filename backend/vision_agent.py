@@ -1,7 +1,7 @@
 """
 ClaimGuard AI - Vision Agent
 Extracts structured data from receipt images using AI Vision Models
-Supports: OpenAI GPT-4 Vision, Google Gemini, and Together AI
+Supports: OpenAI GPT-4 Vision
 """
 
 import json
@@ -22,18 +22,6 @@ try:
 except ImportError:
     OPENAI_AVAILABLE = False
 
-try:
-    import google.generativeai as genai
-    GEMINI_AVAILABLE = True
-except ImportError:
-    GEMINI_AVAILABLE = False
-
-try:
-    import requests
-    REQUESTS_AVAILABLE = True
-except ImportError:
-    REQUESTS_AVAILABLE = False
-
 
 class VisionAgent:
     """Vision Agent for receipt analysis and fraud detection"""
@@ -41,24 +29,15 @@ class VisionAgent:
     def __init__(self):
         """Initialize the Vision Agent with API configuration"""
         self.openai_api_key = os.environ.get('OPENAI_API_KEY')
-        self.gemini_api_key = os.environ.get('GEMINI_API_KEY')
-        self.together_api_key = os.environ.get('TOGETHER_API_KEY')
         
         # Configure OpenAI if available (preferred)
         if self.openai_api_key and OPENAI_AVAILABLE:
             self.client = OpenAI(api_key=self.openai_api_key)
             self.provider = "openai"
-        # Configure Gemini if available
-        elif self.gemini_api_key and GEMINI_AVAILABLE:
-            genai.configure(api_key=self.gemini_api_key)
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
-            self.provider = "gemini"
-        elif self.together_api_key and REQUESTS_AVAILABLE:
-            self.provider = "together"
         else:
             self.provider = "mock"
-            print("[WARNING] No API keys found. Using mock data mode.")
-            print("          Set OPENAI_API_KEY, GEMINI_API_KEY, or TOGETHER_API_KEY environment variable to use AI vision.")
+            print("[WARNING] No OpenAI API key found. Using mock data mode.")
+            print("          Set OPENAI_API_KEY environment variable to use AI vision.")
     
     def encode_image_base64(self, image_path):
         """Encode image to base64 string"""
@@ -188,103 +167,34 @@ Analyze the receipt image thoroughly and provide the structured JSON response.""
             print(f"[ERROR] Error with OpenAI API: {str(e)}")
             return None
     
-    def analyze_with_gemini(self, image_path):
-        """Analyze receipt using Google Gemini Vision API"""
-        try:
-            # Read the image
-            from PIL import Image
-            img = Image.open(image_path)
-            
-            # Create the prompt
-            prompt = self.get_system_prompt()
-            prompt += "\n\nAnalyze this receipt image and provide the structured JSON response:"
-            
-            # Generate content
-            response = self.model.generate_content([prompt, img])
-            
-            # Extract JSON from response
-            response_text = response.text.strip()
-            
-            # Try to extract JSON if wrapped in markdown code blocks
-            if "```json" in response_text:
-                json_start = response_text.find("```json") + 7
-                json_end = response_text.find("```", json_start)
-                response_text = response_text[json_start:json_end].strip()
-            elif "```" in response_text:
-                json_start = response_text.find("```") + 3
-                json_end = response_text.find("```", json_start)
-                response_text = response_text[json_start:json_end].strip()
-            
-            # Parse JSON
-            result = json.loads(response_text)
-            return result
-            
-        except Exception as e:
-            print(f"[ERROR] Error with Gemini API: {str(e)}")
-            return None
-    
-    def analyze_with_together(self, image_path):
-        """Analyze receipt using Together AI Vision API"""
-        try:
-            # Encode image to base64
-            image_base64 = self.encode_image_base64(image_path)
-            
-            # Together AI API endpoint (using Llama Vision or similar)
-            url = "https://api.together.xyz/v1/chat/completions"
-            
-            headers = {
-                "Authorization": f"Bearer {self.together_api_key}",
-                "Content-Type": "application/json"
-            }
-            
-            payload = {
-                "model": "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": self.get_system_prompt()
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{image_base64}"
-                                }
-                            }
-                        ]
-                    }
-                ],
-                "max_tokens": 2000,
-                "temperature": 0.1
-            }
-            
-            response = requests.post(url, headers=headers, json=payload)
-            response.raise_for_status()
-            
-            result_text = response.json()['choices'][0]['message']['content']
-            
-            # Extract JSON from response
-            if "```json" in result_text:
-                json_start = result_text.find("```json") + 7
-                json_end = result_text.find("```", json_start)
-                result_text = result_text[json_start:json_end].strip()
-            elif "```" in result_text:
-                json_start = result_text.find("```") + 3
-                json_end = result_text.find("```", json_start)
-                result_text = result_text[json_start:json_end].strip()
-            
-            result = json.loads(result_text)
-            return result
-            
-        except Exception as e:
-            print(f"[ERROR] Error with Together AI: {str(e)}")
-            return None
-    
     def load_mock_data(self):
         """Load mock data from claim_valid.json for testing"""
-        mock_path = Path(__file__).parent.parent / "data" / "claim_valid.json"
+        # Try multiple paths to find the mock data file
+        possible_paths = [
+            # Relative to this script when running locally or in test
+            Path(__file__).parent.parent / "data" / "claim_valid.json",
+            # Docker container absolute path
+            Path("/app/claimguard_data/claim_valid.json"),
+            # Kestra mounted path
+            Path("claim_valid.json")
+        ]
+        
+        mock_path = None
+        for path in possible_paths:
+            if path.exists():
+                mock_path = path
+                break
+        
+        if not mock_path:
+             # Fallback to hardcoded minimal data if file not found
+             print("[WARNING] Mock data file not found, using minimal fallback data")
+             return {
+                "fraud_detection": {"recommendation": "APPROVE", "confidence_score": 1.0, "suspicious": False},
+                "merchant_name": "Apollo Pharmacy (Fallback)",
+                "total_amount": 250.0,
+                "line_items": []
+             }
+
         try:
             with open(mock_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -297,7 +207,7 @@ Analyze the receipt image thoroughly and provide the structured JSON response.""
                 'recommendation': 'APPROVE'
             }
             
-            print("[INFO] Using mock data from claim_valid.json")
+            print(f"[INFO] Using mock data from {mock_path}")
             return data
             
         except Exception as e:
@@ -332,15 +242,7 @@ Analyze the receipt image thoroughly and provide the structured JSON response.""
         if self.provider == "openai":
             print("[ANALYZING] Using OpenAI GPT-4 Vision API...")
             result = self.analyze_with_openai(image_path)
-            
-        elif self.provider == "gemini":
-            print("[ANALYZING] Using Google Gemini Vision API...")
-            result = self.analyze_with_gemini(image_path)
-            
-        elif self.provider == "together":
-            print("[ANALYZING] Using Together AI Vision API...")
-            result = self.analyze_with_together(image_path)
-            
+    
         else:  # mock mode
             print("[ANALYZING] Mock mode - returning sample data...")
             result = self.load_mock_data()
@@ -378,8 +280,6 @@ def main():
         print("  python vision_agent.py receipt.jpg extracted_claim.json")
         print("\nEnvironment Variables:")
         print("  OPENAI_API_KEY     - OpenAI API key (recommended)")
-        print("  GEMINI_API_KEY     - Google Gemini API key")
-        print("  TOGETHER_API_KEY   - Together AI API key")
         print("\nNote: If no API keys are set, mock data will be used for testing.")
         sys.exit(1)
     
