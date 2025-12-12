@@ -338,10 +338,6 @@ npm run dev
 
 ---
 
-### Running Individual Services (Docker)
-
----
-
 ## 🔧 Configuration
 
 ### Environment Variables
@@ -364,52 +360,6 @@ Edit `data/policy_rules.json` to customize:
 - Room rent percentage limit
 - Medical necessity criteria
 - Deduction rules
-
----
-
-## 📊 How It Works
-
-### Backend Processing (3-Layer Validation)
-
-When a receipt is uploaded via UI or Kestra:
-
-1. **Layer 1: AI Vision Agent** (OpenAI GPT-4o-mini)
-   - Extracts structured data from image
-   - Detects visual fraud (date tampering, photoshopped amounts, font inconsistencies)
-   - Outputs: JSON data + fraud_detection object with recommendation
-
-2. **Layer 2: AI Medical Judge** (OpenAI GPT-4o-mini)
-   - Validates clinical necessity of items based on diagnosis
-   - Flags medically illogical items (e.g., "MRI for Viral Fever")
-   - Outputs: PASS/FLAG status for each line item
-
-3. **Layer 3: Policy Engine** (Rule-Based)
-   - Applies exclusion rules (85+ items: supplements, cosmetics, etc.)
-   - Calculates room rent capping (1% of sum insured limit)
-   - Applies proportionate deductions if room rent exceeds limit
-   - Outputs: APPROVED/PARTIAL_APPROVAL/REJECTED with amounts
-
-4. **Fraud Override**
-   - If Vision Agent recommends REJECT → Entire claim REJECTED (overrides policy)
-   - If Vision Agent recommends MANUAL_REVIEW → Claim flagged for human review
-
-### Kestra Workflow (6-Stage Pipeline)
-
-The Kestra orchestration automates the entire process:
-
-1. **File Validation**: Validates uploaded receipt
-2. **Vision Agent**: Calls backend API for AI analysis
-3. **Fraud Evaluation**: Extracts fraud recommendation
-4. **Policy Engine**: Applies insurance rules
-5. **Report Generation**: Creates detailed claim summary
-6. **Notification**: Sends mock email with decision
-
-### Policy Rules Applied
-
-- **Exclusions**: 85+ items automatically rejected (supplements, cosmetics, protein powders, etc.)
-- **Room Rent Capping**: If > 1% of sum insured, proportionate deduction applied
-- **Medical Necessity**: Validates if treatment is medically required
-- **GST Handling**: GST excluded from reimbursement
 
 ---
 
