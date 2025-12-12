@@ -143,18 +143,3 @@ tools:
   shellcheck:
     enabled: true
 
-# =============================================================================
-# Knowledge Base (Custom Context)
-# =============================================================================
-knowledge_base:
-  # Learnings from past reviews
-  learnings:
-    scope: "auto"
-  
-  # Issues to reference
-  issues:
-    scope: "auto"
-  
-  # Pull requests for context
-  pull_requests:
-    scope: "auto"
