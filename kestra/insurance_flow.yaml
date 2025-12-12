@@ -7,7 +7,7 @@ description: |
 labels:
   project: ClaimGuard AI
   hackathon: Assemble Hack 2025
-  version: "5.2"
+  version: "6.0-simplified"
 
 
 inputs:
@@ -55,164 +55,94 @@ tasks:
       - echo "STAGE 2 - VISION AGENT"
       - echo "========================================================================"
       - echo "Sending receipt to AI Vision Agent..."
-      - curl -s -X POST "http://backend:8000/api/analyze" -F "file=@receipt.jpg;type=image/jpeg" -o vision_result.json
-      - echo "Vision Agent analysis complete!"
-      - cat vision_result.json
+      - |
+        # Make API call and capture HTTP status
+        HTTP_CODE=$(curl -s -w "%{http_code}" -X POST "http://backend:8000/api/analyze" \
+          -F "file=@receipt.jpg;type=image/jpeg" \
+          -o vision_result.json)
+        
+        echo "HTTP Status: $HTTP_CODE"
+        
+        # Check if request was successful
+        if [ "$HTTP_CODE" != "200" ]; then
+          echo "ERROR: Backend API returned status $HTTP_CODE"
+          cat vision_result.json
+          exit 1
+        fi
+        
+        # Validate JSON response
+        if ! grep -q "success" vision_result.json; then
+          echo "ERROR: Invalid response from backend"
+          cat vision_result.json
+          exit 1
+        fi
+        
+        echo "Vision Agent analysis complete!"
 
   - id: stage3_evaluate_fraud
-    type: io.kestra.plugin.scripts.shell.Commands
+    type: io.kestra.plugin.core.log.Log
     description: "Stage 3: Evaluate fraud risk"
-    taskRunner:
-      type: io.kestra.plugin.scripts.runner.docker.Docker
-      pullPolicy: IF_NOT_PRESENT
-      networkMode: docker_claimguard-net
-    containerImage: alpine:latest
-    inputFiles:
-      result.json: "{{ outputs.stage2_vision_agent.outputFiles['vision_result.json'] }}"
-    outputFiles:
-      - "fraud_decision.txt"
-    commands:
-      - apk add --no-cache jq > /dev/null 2>&1
-      - echo "========================================================================"
-      - echo "STAGE 3 - FRAUD RISK EVALUATION"
-      - echo "========================================================================"
-      - FRAUD_RISK=$(jq -r '.vision_analysis.fraud_detection.recommendation // "APPROVE"' result.json)
-      - echo "Fraud Risk Level - $FRAUD_RISK"
-      - echo "$FRAUD_RISK" > fraud_decision.txt
+    message: |
+      ========================================================================
+      STAGE 3 - FRAUD RISK EVALUATION
+      ========================================================================
+      Fraud Risk: {{ json(read(outputs.stage2_vision_agent.outputFiles['vision_result.json'])).vision_analysis.fraud_detection.recommendation }}
+      ========================================================================
 
   - id: stage4_policy_engine
-    type: io.kestra.plugin.scripts.shell.Commands
+    type: io.kestra.plugin.core.log.Log
     description: "Stage 4: Apply policy rules"
-    taskRunner:
-      type: io.kestra.plugin.scripts.runner.docker.Docker
-      pullPolicy: IF_NOT_PRESENT
-      networkMode: docker_claimguard-net
-    containerImage: alpine:latest
-    inputFiles:
-      result.json: "{{ outputs.stage2_vision_agent.outputFiles['vision_result.json'] }}"
-      fraud_decision.txt: "{{ outputs.stage3_evaluate_fraud.outputFiles['fraud_decision.txt'] }}"
-    outputFiles:
-      - "final_decision.json"
-    commands:
-      - apk add --no-cache jq > /dev/null 2>&1
-      - echo "========================================================================"
-      - echo "STAGE 4 - POLICY ENGINE"
-      - echo "========================================================================"
-      - FRAUD_DECISION=$(cat fraud_decision.txt)
-      - STATUS=$(jq -r '.policy_adjudication.status // "UNKNOWN"' result.json)
-      - CLAIMED=$(jq -r '.policy_adjudication.total_claimed // 0' result.json)
-      - APPROVED=$(jq -r '.policy_adjudication.total_approved // 0' result.json)
-      - DEDUCTED=$(jq -r '.policy_adjudication.total_deducted // 0' result.json)
-      - echo "Fraud Decision - $FRAUD_DECISION"
-      - echo "Status - $STATUS"
-      - echo "Claimed - Rs.$CLAIMED"
-      - echo "Approved - Rs.$APPROVED"
-      - echo "Deducted - Rs.$DEDUCTED"
-      - echo "{\"fraud_decision\":\"$FRAUD_DECISION\",\"policy_status\":\"$STATUS\",\"total_claimed\":$CLAIMED,\"total_approved\":$APPROVED,\"total_deducted\":$DEDUCTED}" > final_decision.json
+    message: |
+      ========================================================================
+      STAGE 4 - POLICY ENGINE
+      ========================================================================
+      Status: {{ json(read(outputs.stage2_vision_agent.outputFiles['vision_result.json'])).final_decision.status }}
+      Claimed: Rs.{{ json(read(outputs.stage2_vision_agent.outputFiles['vision_result.json'])).final_decision.total_claimed }}
+      Approved: Rs.{{ json(read(outputs.stage2_vision_agent.outputFiles['vision_result.json'])).final_decision.total_approved }}
+      Deducted: Rs.{{ json(read(outputs.stage2_vision_agent.outputFiles['vision_result.json'])).final_decision.total_deducted }}
+      ========================================================================
 
   - id: stage5_generate_report
-    type: io.kestra.plugin.scripts.shell.Commands
+    type: io.kestra.plugin.core.log.Log
     description: "Stage 5: Generate claim report"
-    taskRunner:
-      type: io.kestra.plugin.scripts.runner.docker.Docker
-      pullPolicy: IF_NOT_PRESENT
-      networkMode: docker_claimguard-net
-    containerImage: alpine:latest
-    inputFiles:
-      result.json: "{{ outputs.stage2_vision_agent.outputFiles['vision_result.json'] }}"
-      final_decision.json: "{{ outputs.stage4_policy_engine.outputFiles['final_decision.json'] }}"
-    commands:
-      - apk add --no-cache jq > /dev/null 2>&1
-      - echo "========================================================================"
-      - echo "STAGE 5 - FINAL CLAIM REPORT"
-      - echo "========================================================================"
-      - echo ""
-      - echo "CLAIM SUMMARY"
-      - echo "-----------------------------------"
-      - MERCHANT=$(jq -r '.vision_analysis.merchant_name // .merchant_name // "N/A"' result.json)
-      - STATUS=$(jq -r '.policy_status' final_decision.json)
-      - CLAIMED=$(jq -r '.total_claimed' final_decision.json)
-      - APPROVED=$(jq -r '.total_approved' final_decision.json)
-      - DIAGNOSIS=$(jq -r '.vision_analysis.diagnosis_or_specialty // "Unknown"' result.json)
-      - echo "Merchant  - $MERCHANT"
-      - echo "Diagnosis - $DIAGNOSIS"
-      - echo "Status    - $STATUS"
-      - echo "Claimed   - Rs.$CLAIMED"
-      - echo "Approved  - Rs.$APPROVED"
-      - echo ""
-      - echo "MEDICAL NECESSITY CHECK (New)"
-      - echo "-----------------------------------"
-      - jq -r '.medical_necessity_check // {} | to_entries[] | "  \(.key): \(.value.status) (\(.value.reason))"' result.json 2>/dev/null || echo "  No medical necessity data available"
-      - echo ""
-      - echo "========================================================================"
+    message: |
+      ========================================================================
+      STAGE 5 - FINAL CLAIM REPORT
+      ========================================================================
+      
+      CLAIM SUMMARY
+      Merchant: {{ json(read(outputs.stage2_vision_agent.outputFiles['vision_result.json'])).vision_analysis.merchant_name }}
+      Diagnosis: {{ json(read(outputs.stage2_vision_agent.outputFiles['vision_result.json'])).vision_analysis.diagnosis_or_specialty }}
+      Status: {{ json(read(outputs.stage2_vision_agent.outputFiles['vision_result.json'])).final_decision.status }}
+      Claimed: Rs.{{ json(read(outputs.stage2_vision_agent.outputFiles['vision_result.json'])).final_decision.total_claimed }}
+      Approved: Rs.{{ json(read(outputs.stage2_vision_agent.outputFiles['vision_result.json'])).final_decision.total_approved }}
+      
+      ========================================================================
 
   - id: stage6_send_notification
-    type: io.kestra.plugin.scripts.shell.Commands
+    type: io.kestra.plugin.core.log.Log
     description: "Stage 6: Send notification (Mock Email)"
-    taskRunner:
-      type: io.kestra.plugin.scripts.runner.docker.Docker
-      pullPolicy: IF_NOT_PRESENT
-      networkMode: docker_claimguard-net
-    containerImage: alpine:latest
-    inputFiles:
-      result.json: "{{ outputs.stage2_vision_agent.outputFiles['vision_result.json'] }}"
-      final_decision.json: "{{ outputs.stage4_policy_engine.outputFiles['final_decision.json'] }}"
-    commands:
-      - apk add --no-cache jq > /dev/null 2>&1
-      - echo "========================================================================"
-      - echo "STAGE 6 - SEND NOTIFICATION"
-      - echo "========================================================================"
-      - echo ""
-      - MERCHANT=$(jq -r '.vision_analysis.merchant_name // .merchant_name // "N/A"' result.json)
-      - DATE=$(jq -r '.vision_analysis.date // .date // "N/A"' result.json)
-      - STATUS=$(jq -r '.policy_status' final_decision.json)
-      - CLAIMED=$(jq -r '.total_claimed' final_decision.json)
-      - APPROVED=$(jq -r '.total_approved' final_decision.json)
-      - DEDUCTED=$(jq -r '.total_deducted' final_decision.json)
-      - DIAGNOSIS=$(jq -r '.vision_analysis.diagnosis_or_specialty // "Unknown"' result.json)
-      - echo "+----------------------------------------------------------------------+"
-      - echo "|                    EMAIL NOTIFICATION                                |"
-      - echo "+----------------------------------------------------------------------+"
-      - echo "|  To - patient@email.com"
-      - echo "|  From - ClaimGuard AI <claims@claimguard.ai>"
-      - echo "|  Subject - Your Insurance Claim Decision"
-      - echo "+----------------------------------------------------------------------+"
-      - echo ""
-      - echo "Dear Valued Customer,"
-      - echo ""
-      - echo "Your insurance claim has been processed by ClaimGuard AI."
-      - echo ""
-      - echo "CLAIM DETAILS"
-      - echo "  Merchant - $MERCHANT"
-      - echo "  Date - $DATE"
-      - echo "  Diagnosis - $DIAGNOSIS"
-      - echo "  Claimed Amount - Rs.$CLAIMED"
-      - echo ""
-      - echo "DECISION"
-      - echo "========================================="
-      - sh -c "if [ \"$STATUS\" = \"APPROVED\" ]; then echo \"  STATUS - FULLY APPROVED\"; echo \"\"; echo \"  Great news! Your entire claim of Rs.$APPROVED has been APPROVED.\"; echo \"  The approved amount will be credited to your account within 3-5 business days.\"; elif [ \"$STATUS\" = \"PARTIAL_APPROVAL\" ]; then echo \"  STATUS - PARTIALLY APPROVED\"; echo \"\"; echo \"  Your claim has been partially approved.\"; echo \"  Approved Amount - Rs.$APPROVED\"; echo \"  Deducted Amount - Rs.$DEDUCTED\"; echo \"\"; echo \"  Some items were excluded as per policy terms.\"; echo \"  The approved amount will be credited within 3-5 business days.\"; else echo \"  STATUS - REJECTED\"; echo \"\"; echo \"  Unfortunately, your claim could not be approved.\"; echo \"  Rejection Reason - Does not meet policy requirements\"; echo \"\"; echo \"  For more details, please contact our support team.\"; fi"
-      - echo "========================================="
-      - echo ""
-      - echo "Thank you for choosing our insurance services."
-      - echo ""
-      - echo "Best regards,"
-      - echo "ClaimGuard AI Team"
-      - echo "support@claimguard.ai | 1800-XXX-XXXX"
-      - echo ""
-      - echo "+----------------------------------------------------------------------+"
-      - echo ""
-      - echo "========================================================================"
-      - echo "ALL 6 STAGES COMPLETE"
-      - echo "========================================================================"
-      - echo "Stage 1 - File Validation      [DONE]"
-      - echo "Stage 2 - Vision & Med Judge   [DONE]"
-      - echo "Stage 3 - Fraud Evaluation     [DONE]"
-      - echo "Stage 4 - Policy Engine        [DONE]"
-      - echo "Stage 5 - Generate Report      [DONE]"
-      - echo "Stage 6 - Send Notification    [DONE]"
-      - echo "========================================================================"
-      - echo "Powered by Kestra + OpenAI | Assemble Hack 2025"
-      - echo "========================================================================"
+    message: |
+      ========================================================================
+      STAGE 6 - SEND NOTIFICATION (Mock Email)
+      ========================================================================
+      
+      To: patient@email.com
+      From: ClaimGuard AI <claims@claimguard.ai>
+      Subject: Your Insurance Claim Decision
+      
+      Dear Valued Customer,
+      
+      Your claim has been processed:
+      - Merchant: {{ json(read(outputs.stage2_vision_agent.outputFiles['vision_result.json'])).vision_analysis.merchant_name }}
+      - Status: {{ json(read(outputs.stage2_vision_agent.outputFiles['vision_result.json'])).final_decision.status }}
+      - Approved: Rs.{{ json(read(outputs.stage2_vision_agent.outputFiles['vision_result.json'])).final_decision.total_approved }}
+      
+      ========================================================================
+      ALL 6 STAGES COMPLETE
+      ========================================================================
+      Powered by Kestra + OpenAI | Assemble Hack 2025
+      ========================================================================
 
 errors:
   - id: handle_error
