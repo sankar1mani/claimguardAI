@@ -6,6 +6,7 @@
 [![Assemble Hack 2025](https://img.shields.io/badge/Assemble%20Hack-2025-blue)](https://assemblehack.com)
 [![Kestra](https://img.shields.io/badge/Orchestrated%20with-Kestra-pink)](https://kestra.io)
 [![OpenAI](https://img.shields.io/badge/AI-OpenAI%20GPT--4o-green)](https://openai.com)
+[![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/sankar1mani/claimguardAI?utm_source=oss&utm_medium=github&utm_campaign=sankar1mani%2FclaimguardAI&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
 [![Docker](https://img.shields.io/badge/Containerized-Docker-blue)](https://docker.com)
 [![Vercel](https://img.shields.io/badge/Deployed-Vercel-black)](https://vercel.com)
 

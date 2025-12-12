@@ -1,0 +1,160 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+# =============================================================================
+# ClaimGuard AI - CodeRabbit Configuration
+# AI-powered code review for insurance claim adjudication system
+# =============================================================================
+
+# Language for reviews
+language: "en-US"
+
+# Enable early access features for best AI capabilities
+early_access: true
+
+# =============================================================================
+# Review Settings
+# =============================================================================
+reviews:
+  # Profile: "chill" = helpful suggestions, "assertive" = strict enforcement
+  profile: "assertive"
+  
+  # Request changes on critical issues (security, bugs)
+  request_changes_workflow: true
+  
+  # Generate high-level summary of changes
+  high_level_summary: true
+  
+  # Include poem (fun for hackathon!)
+  poem: true
+  
+  # Show review status in PR
+  review_status: true
+  
+  # Keep walkthrough expanded (easier to read)
+  collapse_walkthrough: false
+  
+  # Auto-review settings
+  auto_review:
+    enabled: true
+    # Review draft PRs too (useful during development)
+    drafts: true
+    # Ignore test files for speed
+    ignore_title_keywords:
+      - "WIP"
+      - "DO NOT MERGE"
+
+# =============================================================================
+# Path-Specific Instructions
+# Make CodeRabbit focus on what matters for this project
+# =============================================================================
+path_instructions:
+  # Backend AI Agents - Security critical
+  - path: "backend/vision_agent.py"
+    instructions: |
+      This is the AI Vision Agent for fraud detection.
+      Focus on:
+      - API key handling security (no hardcoded keys)
+      - OpenAI API error handling
+      - Image processing edge cases (corrupted files, large files)
+      - JSON parsing safety (malformed responses)
+      - Prompt injection vulnerabilities in AI prompts
+
+  - path: "backend/medical_judge.py"
+    instructions: |
+      This is the Medical Necessity Judge using OpenAI.
+      Focus on:
+      - Clinical logic validation
+      - LLM response parsing safety
+      - Error handling for API failures
+      - Token limit handling
+
+  - path: "backend/policy_engine.py"
+    instructions: |
+      This is the rule-based Policy Engine.
+      Focus on:
+      - Business logic correctness (insurance rules)
+      - Edge cases in calculations (division by zero, negative amounts)
+      - Room rent capping logic accuracy
+      - Exclusion matching logic
+
+  - path: "backend/main.py"
+    instructions: |
+      This is the FastAPI server.
+      Focus on:
+      - API security (input validation, CORS)
+      - File upload security (file type validation, size limits)
+      - Database query safety (SQL injection)
+      - Error handling and logging
+
+  # Frontend - User experience
+  - path: "frontend/src/**/*.jsx"
+    instructions: |
+      React frontend components.
+      Focus on:
+      - React best practices (hooks, state management)
+      - Accessibility (a11y)
+      - Error boundary handling
+      - Loading states and user feedback
+
+  - path: "frontend/src/**/*.tsx"
+    instructions: |
+      TypeScript React components.
+      Focus on:
+      - Type safety and proper typing
+      - React best practices
+      - Component reusability
+
+  # Kestra Workflow
+  - path: "kestra/*.yaml"
+    instructions: |
+      Kestra workflow definitions.
+      Focus on:
+      - YAML syntax correctness
+      - Pipeline stage dependencies
+      - Error handling in workflow
+      - Environment variable usage
+
+  # Policy Rules (Critical business data)
+  - path: "data/policy_rules.json"
+    instructions: |
+      Insurance policy rules configuration.
+      Focus on:
+      - JSON structure validity
+      - Logical consistency of rules
+      - No duplicate exclusions
+      - Sensible default values
+
+# =============================================================================
+# Chat Settings
+# =============================================================================
+chat:
+  # Enable auto-reply to questions
+  auto_reply: true
+
+# =============================================================================
+# Tools Integration
+# =============================================================================
+tools:
+  # Python linting
+  ruff:
+    enabled: true
+  
+  # Shell script checking  
+  shellcheck:
+    enabled: true
+
+# =============================================================================
+# Knowledge Base (Custom Context)
+# =============================================================================
+knowledge_base:
+  # Learnings from past reviews
+  learnings:
+    scope: "auto"
+  
+  # Issues to reference
+  issues:
+    scope: "auto"
+  
+  # Pull requests for context
+  pull_requests:
+    scope: "auto"
