@@ -65,45 +65,45 @@ ClaimGuard AI automates the entire insurance claim adjudication process for Indi
 ClaimGuard AI uses a **multi-agent system** with 3 validation layers working together to process claims with forensic accuracy.
 
 ```mermaid
-graph TB
-    Start[📱 Patient Submits Medical Receipt] --> Upload[📄 Receipt Upload]
+graph TD
+    Start[📱 Patient Submits Medical Receipt] --> Upload[📄 Receipt Uploaded]
     
-    Upload --> Check1[🔍 Step 1: Fraud Detection]
-    Check1 --> Fraud{Is Receipt<br/>Authentic?}
+    Upload --> Step1[🔍 STEP 1: Fraud Detection AI]
     
-    Fraud -->|❌ Tampered Date<br/>❌ Fake Amount<br/>❌ Missing Details| Reject[🚫 CLAIM REJECTED<br/>Reason: Fraud Detected]
+    Step1 --> Q1{Is Receipt Authentic?}
+    Q1 -->|❌ NO - Fraud Detected| R1[🚫 CLAIM REJECTED<br/>Reason: Tampered/Fake Receipt]
+    Q1 -->|✅ YES - Authentic| Step2[🩺 STEP 2: Medical Review AI]
     
-    Fraud -->|✅ Authentic| Check2[🩺 Step 2: Medical Review]
-    Check2 --> Medical{Are Treatments<br/>Medically Necessary?}
+    Step2 --> Q2{Are Treatments<br/>Medically Necessary?}
+    Q2 -->|✅ YES| Step3[📋 STEP 3: Policy Compliance Check]
+    Q2 -->|⚠️ SOME ISSUES| Step3
     
-    Medical -->|⚠️ Unnecessary Items Found| Flag[⚠️ Flag for Review]
-    Medical -->|✅ All Necessary| Check3[📋 Step 3: Policy Check]
-    Flag --> Check3
+    Step3 --> Q3A{Contains Excluded Items?<br/>Supplements, Cosmetics, etc.}
+    Q3A -->|✅ YES| Action1[❌ Remove Excluded Items]
+    Q3A -->|❌ NO| Q3B
     
-    Check3 --> Policy1{Contains<br/>Excluded Items?}
-    Policy1 -->|✅ Supplements<br/>✅ Cosmetics| Remove[❌ Remove Excluded Items]
+    Action1 --> Q3B{Room Rent Exceeds Limit?<br/>Above ₹5,000/day}
+    Q3B -->|✅ YES| Action2[💰 Apply Proportionate Deduction]
+    Q3B -->|❌ NO| Decision
     
-    Check3 --> Policy2{Room Rent<br/>Exceeds Limit?}
-    Policy2 -->|✅ Above ₹5,000/day| Deduct[💰 Apply Proportionate Deduction]
+    Action2 --> Decision[✅ CALCULATE FINAL AMOUNT]
     
-    Policy1 -->|❌ All Covered| Approve
-    Policy2 -->|❌ Within Limit| Approve
-    Remove --> Approve
-    Deduct --> Approve
+    Decision --> Result{Final Status}
+    Result -->|✅ Fully Approved| Notify1[📧 Approved: ₹X Amount]
+    Result -->|⚠️ Partially Approved| Notify2[📧 Partial: ₹X Approved, ₹Y Deducted]
+    Result -->|❌ Rejected| Notify3[📧 Rejected: Reason Provided]
     
-    Approve[✅ CLAIM APPROVED<br/>Calculate Final Amount]
+    R1 --> End
+    Notify1 --> End[✅ Process Complete<br/>⏱️ Time: 10-30 seconds]
+    Notify2 --> End
+    Notify3 --> End
     
-    Approve --> Notify[📧 Send Decision to Patient]
-    Reject --> Notify
-    
-    Notify --> End[✅ Process Complete<br/>⏱️ Time: 10-30 seconds]
-    
-    style Check1 fill:#ff6b6b,color:#fff
-    style Check2 fill:#4ecdc4,color:#fff
-    style Check3 fill:#95e1d3,color:#000
-    style Reject fill:#e74c3c,color:#fff
-    style Approve fill:#2ecc71,color:#fff
-    style End fill:#3498db,color:#fff
+    style Step1 fill:#ff6b6b,color:#fff,stroke:#c0392b,stroke-width:3px
+    style Step2 fill:#4ecdc4,color:#fff,stroke:#16a085,stroke-width:3px
+    style Step3 fill:#95e1d3,color:#000,stroke:#45b7aa,stroke-width:3px
+    style R1 fill:#e74c3c,color:#fff,stroke:#c0392b,stroke-width:3px
+    style Decision fill:#f39c12,color:#fff,stroke:#d68910,stroke-width:3px
+    style End fill:#2ecc71,color:#fff,stroke:#27ae60,stroke-width:3px
 ```
 
 ### What Happens in Each Step?
