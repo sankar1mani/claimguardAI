@@ -14,32 +14,45 @@
 
 ## 🎯 What is ClaimGuard AI?
 
-ClaimGuard AI automates the entire insurance claim adjudication process for Indian health insurance. Upload a medical receipt, and our AI system:
+ClaimGuard AI automates the entire insurance claim adjudication process for Indian health insurance using a **3-layer AI validation system**. Upload a medical receipt, and our multi-agent AI system:
 
-1. **Extracts data** from the receipt using AI vision
-2. **Detects fraud** (tampered receipts, excluded items)
-3. **Applies policy rules** (room rent capping, exclusions)
-4. **Generates decision** (approved/rejected with reasoning)
+1. **🔍 AI Vision Agent** - Extracts data from receipt images + detects visual fraud (date tampering, photoshopped amounts)
+2. **🩺 AI Medical Judge** - Validates clinical necessity of treatments based on diagnosis
+3. **📋 Policy Engine** - Applies insurance rules (room rent capping, exclusions, limits)
+4. **🛡️ Fraud Override** - Automatically rejects claims with detected fraud indicators
 
-**Result**: Claims processed in seconds instead of days, with 100% policy compliance.
+**Result**: Claims processed in **10-30 seconds** instead of days, with **100% policy compliance** and **AI-powered fraud detection**.
 
 ---
 
 ## ✨ Key Features
 
-### 🔍 AI Vision & Fraud Detection
-- Extracts structured data from receipt images (medicines, amounts, dates)
-- Detects photoshopped or tampered receipts
-- Identifies duplicate bills
-- Validates mandatory fields (GST, Doctor Registration)
+### 🔍 AI Vision Agent (Layer 1) - Visual Fraud Detection
+- **Data Extraction**: Extracts structured data from receipt images (medicines, amounts, dates, merchant details)
+- **Visual Fraud Detection** (Powered by OpenAI GPT-4o-mini):
+  - ✅ **Date Tampering** - Detects pixel inconsistencies, font mismatches in date fields
+  - ✅ **Amount Manipulation** - Identifies photoshopped or digitally altered amounts
+  - ✅ **Duplicate Receipts** - Flags photos of printouts or resubmissions
+  - ✅ **Missing Fields** - Validates mandatory fields (GST number, pharmacy registration)
+  - ✅ **Font Inconsistencies** - Detects multiple fonts suggesting tampering
+- **Fraud Recommendation**: APPROVE / REJECT / MANUAL_REVIEW with confidence scores
 
-### 📋 Intelligent Policy Engine
+### 🩺 AI Medical Judge (Layer 2) - Clinical Necessity
+- **Powered by OpenAI GPT-4o-mini** to validate medical logic
+- Checks if claimed items are medically necessary for the diagnosis
+- Examples:
+  - ✅ Flags "MRI Scan" for "Viral Fever" diagnosis
+  - ✅ Flags "Dental Treatment" for "Bone Fracture" claim
+  - ✅ Passes "Antibiotics" for "Bacterial Infection"
+- Provides PASS/FLAG status with reasoning for each line item
+
+### 📋 Policy Engine (Layer 3) - Rule-Based Validation
 - **Room Rent Capping**: Automatically calculates proportionate deductions
   - Example: If room rent is ₹8,000 (limit ₹5,000), system deducts 37.5% from entire claim
-- **Exclusion Detection**: Rejects 85+ non-payable items (supplements, cosmetics, etc.)
-- **Medical Necessity Check**: Validates if treatments are medically necessary
+- **Exclusion Detection**: Rejects 85+ non-payable items (supplements, cosmetics, protein powders, etc.)
+- **Fraud Override**: If Vision Agent detects fraud → Entire claim REJECTED (overrides policy approval)
 
-### ⚡ Automated Workflow
+### ⚡ Automated Workflow (Kestra Orchestration)
 - 6-stage pipeline orchestrated by Kestra
 - Real-time execution tracking
 - Automated email notifications
@@ -47,54 +60,99 @@ ClaimGuard AI automates the entire insurance claim adjudication process for Indi
 
 ---
 
-## 🔄 High-Level Process Flow
+## 🔄 3-Layer AI Validation Architecture
 
-ClaimGuard AI follows a forensic 4-step adjudication process similar to a human auditor, but in milliseconds.
+ClaimGuard AI uses a **multi-agent system** with 3 validation layers working together to process claims with forensic accuracy.
 
 ```mermaid
-graph LR
-    subgraph "Submission"
-    A[📄 Claim Upload]
-    end
-
-    subgraph "Forensic Analysis"
-    B[🔍 AI Digitization] --> C[🛡️ Fraud Detection]
-    end
-
-    subgraph "Adjudication Engine"
-    C --> D{Compliance Check}
-    D -->|Pass| E[📋 Policy Rules]
-    D -->|Fail| F[❌ Auto-Reject]
-    E --> G[💰 Limit Capping]
-    end
-
-    subgraph "Decision"
-    G --> H[✅ Final Settlement]
-    end
-
-    A --> B
+graph TB
+    A[📄 User Uploads Receipt] --> B{File Type?}
+    
+    B -->|JPG/PNG Image| C[🔍 Layer 1: AI Vision Agent]
+    B -->|JSON Test Data| D[Skip Vision - Use Test Data]
+    
+    C -->|OpenAI GPT-4o-mini| E[Extract Data + Visual Fraud Detection]
+    D --> F
+    
+    E --> F{Fraud Detected?}
+    F -->|Date Tampering<br/>Amount Manipulation<br/>Missing Fields| G[❌ REJECT - Fraud Override]
+    F -->|Clean Receipt| H[🩺 Layer 2: AI Medical Judge]
+    
+    H -->|OpenAI GPT-4o-mini| I[Check Clinical Necessity]
+    I --> J[📋 Layer 3: Policy Engine]
+    
+    J -->|Rule-Based| K[Apply Policy Rules]
+    K --> L{Exclusions?}
+    K --> M{Room Rent Limit?}
+    
+    L -->|Supplements<br/>Cosmetics| N[Reject Items]
+    M -->|Exceeds 1% SI| O[Proportionate Deduction]
+    
+    N --> P[✅ Final Decision]
+    O --> P
+    L -->|All Valid| P
+    M -->|Within Limit| P
+    
+    G --> Q[📧 Notification]
+    P --> Q
+    
+    style C fill:#ff6b6b,color:#fff
+    style H fill:#4ecdc4,color:#fff
+    style J fill:#95e1d3,color:#000
+    style G fill:#e74c3c,color:#fff
+    style P fill:#2ecc71,color:#fff
 ```
 
-### Process Breakdown
+### Layer-by-Layer Breakdown
 
-1. **Submission**: User uploads a medical receipt (photo or PDF).
-2. **Forensic Analysis**:
-   - **AI Digitization**: Optical Character Recognition (OCR) extracts merchant details, dates, and line items.
-   - **Fraud Detection**: Analyzes image metadata and patterns to detect tampering, photoshop, or duplicate submissions.
-3. **Adjudication Engine**:
-   - **Exclusion Check**: Filters out 85+ non-payable items (cosmetics, supplements).
-   - **Policy Rules**: Applies room rent capping, copay logic, and sum insured limits.
-4. **Decision**: Generates a final approved amount with line-by-line reasoning.
+#### 🔍 **Layer 1: AI Vision Agent** (OpenAI GPT-4o-mini)
+- **Input**: Receipt image (JPG/PNG) or JSON test data
+- **AI Tasks**:
+  - Extract structured data (merchant, date, items, amounts)
+  - Detect visual fraud (date tampering, photoshopped amounts, font inconsistencies)
+  - Validate mandatory fields (GST number, pharmacy registration)
+- **Output**: Structured JSON + Fraud Detection object with recommendation (APPROVE/REJECT/MANUAL_REVIEW)
+
+#### 🩺 **Layer 2: AI Medical Judge** (OpenAI GPT-4o-mini)
+- **Input**: Diagnosis + Line items from Vision Agent
+- **AI Tasks**:
+  - Validate clinical necessity (e.g., "Is MRI necessary for Viral Fever?")
+  - Flag medically illogical items
+- **Output**: PASS/FLAG status for each item with reasoning
+
+#### 📋 **Layer 3: Policy Engine** (Rule-Based)
+- **Input**: Extracted data + Medical flags
+- **Rule-Based Tasks**:
+  - Check exclusions (85+ items: supplements, cosmetics, protein powders)
+  - Apply room rent capping (1% of sum insured limit)
+  - Calculate proportionate deductions
+- **Output**: APPROVED / PARTIAL_APPROVAL / REJECTED with line-item breakdown
+
+#### 🛡️ **Fraud Override Logic**
+- If **Layer 1** fraud detection recommends **REJECT** → Entire claim is **REJECTED** (overrides policy approval)
+- If fraud detection recommends **MANUAL_REVIEW** → Claim is flagged for human review
 
 ---
 
-## 💻 Technical Stack (For Developers)
+## 💻 Technical Stack
 
-- **Frontend**: React + Vite + Tailwind CSS
-- **Backend**: Python FastAPI + PostgreSQL
-- **AI Core**: OpenAI GPT-4o Vision
-- **Orchestration**: Kestra Workflow Engine
-- **Infrastructure**: Docker Containerization
+### Frontend
+- **React** + **Vite** + **Tailwind CSS**
+- Deployed on **Vercel**
+
+### Backend (Multi-Agent AI System)
+- **FastAPI** (Python) - REST API server
+- **PostgreSQL** - Claim history database
+- **3 AI Agents**:
+  1. **Vision Agent** - OpenAI GPT-4o-mini (visual fraud detection + data extraction)
+  2. **Medical Judge** - OpenAI GPT-4o-mini (clinical necessity validation)
+  3. **Policy Engine** - Rule-based Python (policy compliance)
+
+### Orchestration
+- **Kestra** - Workflow orchestration for automated claim processing
+
+### Infrastructure
+- **Docker** + **Docker Compose** - Containerized deployment
 
 ---
 
@@ -191,10 +249,13 @@ We've included test data in the `data/` folder:
 
 ```
 ClaimGuardAI/
-├── backend/                 # FastAPI application
-│   ├── main.py             # API endpoints
-│   ├── vision_agent.py     # OpenAI integration
-│   ├── policy_engine.py    # Policy rules engine
+├── backend/                 # FastAPI application (3-Agent System)
+│   ├── main.py             # API endpoints + orchestration
+│   ├── vision_agent.py     # Layer 1: AI Vision + Fraud Detection
+│   ├── medical_judge.py    # Layer 2: AI Medical Necessity Validator
+│   ├── policy_engine.py    # Layer 3: Rule-based Policy Compliance
+│   ├── database.py         # PostgreSQL connection
+│   ├── models.py           # Database models
 │   └── requirements.txt    # Python dependencies
 │
 ├── frontend/               # React application
@@ -208,12 +269,12 @@ ClaimGuardAI/
 │   └── README.md           # Kestra setup guide
 │
 ├── docker/                 # Docker configuration
-│   ├── docker-compose.yml  # Full stack setup
+│   ├── docker-compose.yml  # Full stack setup (4 services)
 │   └── .env.example        # Environment template
 │
 └── data/                   # Test data & rules
-    ├── policy_rules.json   # Insurance policy rules
-    └── claim_*.json        # Test claim files
+    ├── policy_rules.json   # Insurance policy rules (85+ exclusions)
+    └── claim_*.json        # Test claim files (7 scenarios)
 ```
 
 ---
@@ -288,18 +349,44 @@ Edit `data/policy_rules.json` to customize:
 
 ## 📊 How It Works
 
-### 6-Stage Pipeline
+### Backend Processing (3-Layer Validation)
+
+When a receipt is uploaded via UI or Kestra:
+
+1. **Layer 1: AI Vision Agent** (OpenAI GPT-4o-mini)
+   - Extracts structured data from image
+   - Detects visual fraud (date tampering, photoshopped amounts, font inconsistencies)
+   - Outputs: JSON data + fraud_detection object with recommendation
+
+2. **Layer 2: AI Medical Judge** (OpenAI GPT-4o-mini)
+   - Validates clinical necessity of items based on diagnosis
+   - Flags medically illogical items (e.g., "MRI for Viral Fever")
+   - Outputs: PASS/FLAG status for each line item
+
+3. **Layer 3: Policy Engine** (Rule-Based)
+   - Applies exclusion rules (85+ items: supplements, cosmetics, etc.)
+   - Calculates room rent capping (1% of sum insured limit)
+   - Applies proportionate deductions if room rent exceeds limit
+   - Outputs: APPROVED/PARTIAL_APPROVAL/REJECTED with amounts
+
+4. **Fraud Override**
+   - If Vision Agent recommends REJECT → Entire claim REJECTED (overrides policy)
+   - If Vision Agent recommends MANUAL_REVIEW → Claim flagged for human review
+
+### Kestra Workflow (6-Stage Pipeline)
+
+The Kestra orchestration automates the entire process:
 
 1. **File Validation**: Validates uploaded receipt
-2. **AI Vision Agent**: Extracts data using OpenAI GPT-4o
-3. **Fraud Detection**: Checks for tampering and duplicates
+2. **Vision Agent**: Calls backend API for AI analysis
+3. **Fraud Evaluation**: Extracts fraud recommendation
 4. **Policy Engine**: Applies insurance rules
-5. **Report Generation**: Creates detailed claim report
-6. **Notification**: Sends email (mock) with decision
+5. **Report Generation**: Creates detailed claim summary
+6. **Notification**: Sends mock email with decision
 
 ### Policy Rules Applied
 
-- **Exclusions**: 85+ items automatically rejected (supplements, cosmetics, etc.)
+- **Exclusions**: 85+ items automatically rejected (supplements, cosmetics, protein powders, etc.)
 - **Room Rent Capping**: If > 1% of sum insured, proportionate deduction applied
 - **Medical Necessity**: Validates if treatment is medically required
 - **GST Handling**: GST excluded from reimbursement
