@@ -40,9 +40,29 @@ class VisionAgent:
             print("          Set OPENAI_API_KEY environment variable to use AI vision.")
     
     def encode_image_base64(self, image_path):
-        """Encode image to base64 string"""
-        with open(image_path, 'rb') as image_file:
-            return base64.b64encode(image_file.read()).decode('utf-8')
+        """
+        Encode image to base64 string
+        
+        Args:
+            image_path: Path to the image file
+            
+        Returns:
+            str: Base64 encoded image string
+            
+        Raises:
+            FileNotFoundError: If image file doesn't exist
+            PermissionError: If file cannot be read
+        """
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Image file not found: {image_path}")
+            
+        try:
+            with open(image_path, 'rb') as image_file:
+                return base64.b64encode(image_file.read()).decode('utf-8')
+        except PermissionError as e:
+            raise PermissionError(f"Cannot read image file {image_path}: {e}")
+        except Exception as e:
+            raise IOError(f"Error reading image file {image_path}: {e}")
     
     def get_system_prompt(self):
         """Generate the system prompt for receipt analysis"""
