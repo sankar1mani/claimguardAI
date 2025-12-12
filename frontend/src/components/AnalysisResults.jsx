@@ -144,7 +144,8 @@ const AnalysisResults = ({ result }) => {
                 <tbody>
                   {lineItems.map((item, index) => {
                     const isRejected = item.excluded || item.status === 'REJECTED';
-                    const hasMedicalFlag = item.medical_necessity === 'FLAG';
+                    const hasMedicalFlag = item.medical_necessity === 'FLAG' || item.medical_necessity === 'CONTRAINDICATED';
+                    const isCritical = item.medical_severity === 'CRITICAL';
 
                     return (
                       <tr
@@ -155,10 +156,13 @@ const AnalysisResults = ({ result }) => {
                         <td className="py-3 px-4">
                           <div>
                             <p className="font-medium text-gray-900">{item.name}</p>
-                            {/* Medical Necessity Warning */}
+                            {/* Medical Necessity Warning - Enhanced for Contraindications */}
                             {hasMedicalFlag && (
-                              <p className="text-xs text-warning-700 font-semibold bg-warning-50 inline-block px-1 rounded mt-1 border border-warning-200">
-                                ⚠ Medical Check: {item.medical_reason}
+                              <p className={`text-xs font-semibold inline-block px-2 rounded mt-1 border ${isCritical
+                                ? 'text-danger-700 bg-danger-50 border-danger-200'
+                                : 'text-warning-700 bg-warning-50 border-warning-200'
+                                }`}>
+                                {isCritical ? '🚫 CONTRAINDICATED' : '⚠ Medical Check'}: {item.medical_reason}
                               </p>
                             )}
                             {item.category && (
@@ -169,7 +173,7 @@ const AnalysisResults = ({ result }) => {
                                 ❌ {item.exclusion_reason}
                               </p>
                             )}
-                            {!isRejected && item.approved_amount < item.total_price && (
+                            {!isRejected && item.approved_amount < item.total_price && item.medical_severity && item.medical_severity !== 'CRITICAL' && (
                               <p className="text-xs text-orange-600 mt-1">
                                 ✂ Proportionate Deduction Applied
                               </p>

@@ -81,22 +81,51 @@ function App() {
    * Transform backend API response to match the format expected by AnalysisResults component
    */
   const transformBackendResponse = (backendData) => {
+    console.log('🔍 DEBUG: Backend Response:', backendData);
+    console.log('🔍 DEBUG: final_decision:', backendData.final_decision);
+
+    // Edge case: Validate backend data structure
+    if (!backendData || typeof backendData !== 'object') {
+      console.error('❌ Invalid backend response:', backendData);
+      throw new Error('Invalid response from backend');
+    }
+
     const policyResult = backendData.policy_adjudication || {};
     const visionAnalysis = backendData.vision_analysis || {};
 
+    // Edge case: Warn if critical data is missing
+    if (!policyResult.line_item_decisions || policyResult.line_item_decisions.length === 0) {
+      console.warn('⚠️ No line item decisions found in backend response');
+    }
+
     // Map line_item_decisions to line_items format
-    const lineItems = (policyResult.line_item_decisions || []).map(decision => ({
-      name: decision.item_name,
-      quantity: 1, // Backend doesn't return quantity in decisions
-      total_price: decision.claimed_amount,
-      approved_amount: decision.approved_amount, // Map approved amount
-      category: '', // Backend doesn't return category in decisions
-      status: decision.status,
-      excluded: decision.status === 'REJECTED',
-      exclusion_reason: decision.status === 'REJECTED' ? decision.reason : null,
-      medical_necessity: decision.medical_necessity, // Map medical flags
-      medical_reason: decision.medical_reason
-    }));
+    const lineItems = (policyResult.line_item_decisions || []).map(decision => {
+      // CRITICAL FIX: Override approved_amount to 0 for contraindicated medications
+      // Backend sets total_approved=0 but doesn't update individual line items
+
+      // Edge case: Handle missing or invalid medical_severity
+      const medicalSeverity = decision.medical_severity || null;
+      const isContraindicated = medicalSeverity === 'CRITICAL';
+
+      // Edge case: Handle missing approved_amount (fallback to claimed_amount)
+      const claimedAmount = decision.claimed_amount || 0;
+      const backendApprovedAmount = decision.approved_amount !== undefined ? decision.approved_amount : claimedAmount;
+      const approvedAmount = isContraindicated ? 0 : backendApprovedAmount;
+
+      return {
+        name: decision.item_name || 'Unknown Item',
+        quantity: decision.quantity || 1,
+        total_price: claimedAmount,
+        approved_amount: approvedAmount, // Use overridden amount for contraindicated items
+        category: decision.category || '',
+        status: decision.status || 'UNKNOWN',
+        excluded: decision.status === 'REJECTED',
+        exclusion_reason: decision.status === 'REJECTED' ? (decision.reason || 'No reason provided') : null,
+        medical_necessity: decision.medical_necessity || null,
+        medical_reason: decision.medical_reason || null,
+        medical_severity: medicalSeverity // Map severity level with null safety
+      };
+    });
 
     // Extract excluded items for the summary section
     const excludedItems = (policyResult.line_item_decisions || [])
@@ -107,6 +136,7 @@ function App() {
         reason: decision.reason
       }));
 
+
     return {
       claim_id: policyResult.claim_id || 'N/A',
       claim_type: policyResult.claim_type || 'N/A',
@@ -114,15 +144,16 @@ function App() {
       merchant_address: visionAnalysis.merchant_address || 'N/A',
       date: visionAnalysis.date || 'N/A',
       patient_name: policyResult.patient_name || 'N/A',
-      status: policyResult.status || 'UNKNOWN',
+      status: backendData.final_decision?.status || policyResult.status || 'UNKNOWN',  // Use final_decision status (with overrides)
       line_items: lineItems,
       total_amount: policyResult.total_claimed || 0,
       subtotal: policyResult.total_claimed || 0,
       excluded_items_found: excludedItems,
-      excluded_amount: policyResult.total_deducted || 0,
-      approved_amount: policyResult.total_approved || 0,
-      reason: policyResult.summary || backendData.final_decision?.summary || 'Analysis complete',
-      fraud_detection: visionAnalysis.fraud_detection || null  // Add fraud detection data
+      excluded_amount: backendData.final_decision?.total_deducted || policyResult.total_deducted || 0,  // Use final_decision (with overrides)
+      approved_amount: backendData.final_decision?.total_approved || policyResult.total_approved || 0,  // Use final_decision (with overrides)
+      reason: backendData.final_decision?.summary || policyResult.summary || 'Analysis complete',  // Use final_decision summary
+      fraud_detection: visionAnalysis.fraud_detection || null,  // Add fraud detection data
+      diagnosis_or_specialty: visionAnalysis.diagnosis_or_specialty || null  // Add diagnosis for display
     };
   };
 

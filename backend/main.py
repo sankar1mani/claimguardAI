@@ -215,6 +215,7 @@ async def analyze_receipt(
             line_items=vision_result.get('line_items', [])
         )
         print("Medical Judge evaluation complete")
+        print(f"   Medical Flags: {medical_flags}")  # DEBUG: Show what Medical Judge returned
         
         # STEP 4: Save vision result to temporary JSON file for policy engine
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as temp_json:
@@ -231,8 +232,9 @@ async def analyze_receipt(
             item_name = item.get('item_name')
             if item_name in medical_flags:
                 judge_decision = medical_flags[item_name]
-                item['medical_necessity'] = judge_decision['status']
-                item['medical_reason'] = judge_decision['reason']
+                item['medical_necessity'] = judge_decision.get('status', 'PASS')
+                item['medical_reason'] = judge_decision.get('reason', '')
+                item['medical_severity'] = judge_decision.get('severity', 'INFO')  # Add severity
         
         if not policy_result:
             raise HTTPException(
@@ -269,6 +271,47 @@ async def analyze_receipt(
             print("-" * 80)
             final_summary = f"[MANUAL REVIEW REQUIRED] Suspicious activity detected. {final_summary}"
             print(f"   Status: {final_status} (Manual Review Flagged)\n")
+        
+        # STEP 6.5: Medical Contraindication Override
+        # Check if any items are contraindicated (CRITICAL severity)
+        contraindicated_items = []
+        critical_items = []
+        contraindicated_amount = 0  # Track total amount of contraindicated items
+        
+        for item_name, evaluation in medical_flags.items():
+            status = evaluation.get('status', 'PASS')
+            severity = evaluation.get('severity', 'INFO')
+            
+            if status in ['CONTRAINDICATED', 'FLAG']:
+                if severity == 'CRITICAL':
+                    critical_items.append(item_name)
+                    # Find the item amount from line_item_decisions
+                    for item in policy_result.get('line_item_decisions', []):
+                        if item.get('item_name') == item_name:
+                            contraindicated_amount += item.get('claimed_amount', 0)
+                            break
+                contraindicated_items.append(item_name)
+        
+        if critical_items:
+            print("MEDICAL CONTRAINDICATION WARNING: Critical contraindications detected")
+            print("-" * 80)
+            print(f"   Contraindicated Items: {', '.join(critical_items)}")
+            print(f"   Contraindicated Amount: Rs.{contraindicated_amount:,.2f}")
+            
+            # Deduct only contraindicated items from approved amount
+            original_approved = policy_result.get('total_approved', 0)
+            final_approved = max(0, original_approved - contraindicated_amount)
+            final_status = 'PARTIAL_APPROVAL'  # Flag for manual review
+            final_summary = f"⚠️ MEDICAL REVIEW REQUIRED: Contraindicated medications detected ({', '.join(critical_items)}). These medications may be harmful for patients with {diagnosis}. Manual review required for patient safety."
+            
+            print(f"   Original Approved: Rs.{original_approved:,.2f}")
+            print(f"   Final Approved: Rs.{final_approved:,.2f} (after deducting contraindicated items)")
+            print(f"   Status: PARTIAL_APPROVAL (Manual Review Required)")
+            print(f"   Action: Contraindicated items flagged for manual review\n")
+        elif contraindicated_items:
+            print(f"MEDICAL WARNING: {len(contraindicated_items)} item(s) flagged for review")
+            print("-" * 80)
+            print(f"   Flagged Items: {', '.join(contraindicated_items)}\n")
         
         # STEP 7: Combine results
         final_result = {

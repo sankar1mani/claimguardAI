@@ -46,24 +46,62 @@ class MedicalJudge:
             # Prepare item list for LLM (names only to save tokens)
             item_list = [item.get('name', 'Unknown Item') for item in line_items]
             
-            system_prompt = f"""You are a Medical Claim Adjudicator.
-Diagnosis: {diagnosis}
-Items: {json.dumps(item_list)}
+            system_prompt = f"""You are a Medical Claims Reviewer evaluating post-hospitalization pharmacy reimbursement claims.
 
-Task: Return a JSON object mapping each item name to a status object.
-Structure:
+**CONTEXT**: 
+- Patient Diagnosis: {diagnosis}
+- Claimed Medications: {json.dumps(item_list)}
+
+**YOUR TASK**: 
+For EACH medication, evaluate if it is clinically appropriate for this specific diagnosis. Consider:
+1. Is this medication commonly prescribed for {diagnosis}?
+2. Are there any contraindications (medical reasons this medication could harm a patient with {diagnosis})?
+3. Is this medication medically necessary or is it unrelated to the diagnosis?
+
+**CRITICAL INSTRUCTIONS**:
+- **DEFAULT TO SAFE**: If a medication is commonly used and safe for the diagnosis, mark it as PASS
+- **BE DIAGNOSIS-SPECIFIC**: Only flag contraindications that apply to THIS diagnosis
+- **PRIORITIZE PATIENT SAFETY**: If a medication could cause serious harm for this diagnosis, mark it CRITICAL
+
+**OUTPUT FORMAT** (JSON only, no other text):
 {{
-  "item_name": {{
-    "status": "PASS" or "FLAG",
-    "reason": "Short explanation"
+  "medication_name": {{
+    "status": "PASS" | "FLAG" | "CONTRAINDICATED",
+    "severity": "INFO" | "WARNING" | "CRITICAL",
+    "reason": "Brief clinical explanation"
   }}
 }}
 
-Rules:
-1. Flag items clearly unrelated to diagnosis (e.g. 'MRI' for 'Fever', 'Dentist' for 'Fracture').
-2. Flag 'Cosmetics' or 'Non-medical' items as FLAG.
-3. Be lenient if diagnosis is vague.
-4. Return ONLY valid JSON."""
+**STATUS DEFINITIONS**:
+- **PASS**: Medication is safe and appropriate for {diagnosis}
+- **FLAG**: Medication may be unnecessary or questionable for {diagnosis} (but not harmful)
+- **CONTRAINDICATED**: Medication is medically contraindicated and could harm patient with {diagnosis}
+
+**SEVERITY DEFINITIONS**:
+- **INFO**: Safe and appropriate medication
+- **WARNING**: Questionable necessity but not harmful
+- **CRITICAL**: Contraindicated - could cause serious harm to patient
+
+**EXAMPLES** (for reference only):
+
+Example 1 - Viral Fever:
+- Paracetamol → PASS (INFO) - "Commonly used antipyretic for fever management"
+- Antibiotics → FLAG (WARNING) - "Not indicated for viral infections"
+- NSAIDs → PASS (INFO) - "Appropriate for fever and pain relief"
+
+Example 2 - Gastric Ulcer:
+- Paracetamol → CONTRAINDICATED (CRITICAL) - "Can worsen gastric ulcers, risk of bleeding"
+- Antacids → PASS (INFO) - "Appropriate for ulcer management"
+- NSAIDs → CONTRAINDICATED (CRITICAL) - "Contraindicated in peptic ulcer disease"
+
+Example 3 - Diabetes:
+- Insulin → PASS (INFO) - "Essential for diabetes management"
+- Steroids → CONTRAINDICATED (CRITICAL) - "Can cause hyperglycemia in diabetic patients"
+- Paracetamol → PASS (INFO) - "Safe for diabetic patients"
+
+**NOW EVALUATE**: For diagnosis "{diagnosis}", evaluate each medication in {json.dumps(item_list)}
+
+Return ONLY valid JSON with no additional text."""
 
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -83,6 +121,10 @@ Rules:
     def _mock_evaluation(self, line_items):
         """Fallback for mock mode or errors - Passes everything"""
         return {
-            item.get('name', 'Unknown'): {"status": "PASS", "reason": "Mock Approval"}
+            item.get('name', 'Unknown'): {
+                "status": "PASS", 
+                "severity": "INFO",
+                "reason": "Mock Approval"
+            }
             for item in line_items
         }
