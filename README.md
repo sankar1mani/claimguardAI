@@ -4,7 +4,7 @@
 > Process medical claims in seconds with automated fraud detection and policy validation.
 
 [![Assemble Hack 2025](https://img.shields.io/badge/Assemble%20Hack-2025-blue)](https://assemblehack.com)
-[![Kestra](https://img.shields.io/badge/Orchestrated%20with-Kestra-pink)](https://kestra.io)
+[![Kestra Orchestration](https://img.shields.io/badge/⚡_Orchestrated_with-Kestra-FF3E4D?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMkw0IDZWMTJDNCAxNy41MiA3LjkxIDIxLjggMTIgMjNDMTYuMDkgMjEuOCAyMCAxNy41MiAyMCAxMlY2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==)](https://kestra.io)
 [![OpenAI](https://img.shields.io/badge/AI-OpenAI%20GPT--4o-green)](https://openai.com)
 [![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/sankar1mani/claimguardAI?utm_source=oss&utm_medium=github&utm_campaign=sankar1mani%2FclaimguardAI&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
 [![Docker](https://img.shields.io/badge/Containerized-Docker-blue)](https://docker.com)
@@ -53,11 +53,15 @@ ClaimGuard AI automates the entire insurance claim adjudication process for Indi
 - **Exclusion Detection**: Rejects 85+ non-payable items (supplements, cosmetics, protein powders, etc.)
 - **Fraud Override**: If Vision Agent detects fraud → Entire claim REJECTED (overrides policy approval)
 
-### ⚡ Automated Workflow (Kestra Orchestration)
-- 6-stage pipeline orchestrated by Kestra
-- Real-time execution tracking
-- Automated email notifications
-- Full audit trail
+### ⚡ Kestra Workflow Orchestration (Key Differentiator)
+- **6-stage automated pipeline** - End-to-end claim processing without manual intervention
+- **Real-time monitoring** - Watch each stage execute live in Kestra UI
+- **Execution history** - Complete audit trail of all claim decisions
+- **Scalable architecture** - Process hundreds of claims in parallel
+- **Easy customization** - Modify workflow via YAML without code changes
+- **Automated notifications** - Email alerts for claim decisions
+
+> **💡 Why Kestra?** Unlike traditional systems requiring manual handoffs between teams, Kestra orchestrates the entire claim lifecycle automatically - from receipt upload to final decision - in one seamless workflow.
 
 ---
 
@@ -155,6 +159,64 @@ graph TD
 
 ---
 
+## 🔄 Kestra Workflow Orchestration
+
+**ClaimGuard AI's secret weapon**: A fully automated 6-stage pipeline that processes claims from upload to decision in 10-30 seconds.
+
+### 📊 6-Stage Automated Pipeline
+
+```mermaid
+graph LR
+    A[📤 1. File Upload] -->|Validate| B[👁️ 2. AI Vision]
+    B -->|Extract Data| C[🔍 3. Fraud Check]
+    C -->|Analyze Risk| D[📋 4. Policy Engine]
+    D -->|Apply Rules| E[📊 5. Generate Report]
+    E -->|Format Results| F[📧 6. Send Notification]
+    
+    style A fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style B fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style C fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style D fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style E fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style F fill:#e0f2f1,stroke:#00796b,stroke-width:2px
+```
+
+### ⚡ Real-Time Execution
+
+Watch your claims process live in the Kestra UI:
+
+1. **Stage 1: File Validation** - Verify file format and size
+2. **Stage 2: AI Vision Agent** - Extract data + detect fraud (OpenAI GPT-4o)
+3. **Stage 3: Fraud Evaluation** - Analyze fraud risk level
+4. **Stage 4: Policy Engine** - Apply exclusions + room rent capping
+5. **Stage 5: Generate Report** - Create detailed claim summary
+6. **Stage 6: Send Notification** - Email formatted decision
+
+### 🎯 Key Benefits
+
+| Feature | Traditional System | With Kestra Orchestration |
+|---------|-------------------|---------------------------|
+| **Processing Time** | 3-7 days (manual handoffs) | 10-30 seconds (automated) |
+| **Monitoring** | Email updates, phone calls | Real-time UI dashboard |
+| **Audit Trail** | Scattered across systems | Centralized execution history |
+| **Scalability** | Limited by human capacity | Process 1000s in parallel |
+| **Customization** | Requires code changes | Edit YAML workflow file |
+| **Error Handling** | Manual investigation | Automatic retry + logging |
+
+### 🚀 Try It Yourself
+
+**Access Kestra UI**: http://localhost:8080 (when running locally)
+
+1. Navigate to **Flows** → `claimguard.insurance` → `claim-adjudication-flow`
+2. Click **Execute** and upload a receipt
+3. Watch the 6-stage pipeline execute in real-time
+4. View detailed logs for each stage
+5. Download output files (vision analysis, fraud report, final decision)
+
+**[📖 Full Kestra Setup Guide →](./kestra/README.md)**
+
+---
+
 ## 💻 Technical Stack
 
 ### Frontend
@@ -169,8 +231,13 @@ graph TD
   2. **Medical Judge** - OpenAI GPT-4o-mini (clinical necessity validation)
   3. **Policy Engine** - Rule-based Python (policy compliance)
 
-### Orchestration
-- **Kestra** - Workflow orchestration for automated claim processing
+### Orchestration ⭐ **Key Differentiator**
+- **Kestra** - Enterprise-grade workflow orchestration
+  - 6-stage automated pipeline
+  - Real-time execution monitoring
+  - Complete audit trail
+  - Parallel execution support
+  - YAML-based configuration
 
 ### Infrastructure
 - **Docker** + **Docker Compose** - Containerized deployment
