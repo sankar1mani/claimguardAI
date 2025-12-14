@@ -266,6 +266,23 @@ We've included test data in the `data/` folder:
 
 ---
 
+## 🖼️ Sample Receipts
+
+We've included **7 test receipt images** in [`data/receipts/`](./data/receipts/):
+
+| Receipt | Type | AI Detection Result |
+|---------|------|---------------------|
+| **Validreceipt1.jpg** | ✅ Valid | No fraud detected - All checks passed |
+| **Validreceipt2.png** | ✅ Valid | Authentic medical bill |
+| **Invalidreceipt.jpg** | ❌ Tampered | Date manipulation detected |
+| **Invalidreceipt1.jpg** | ❌ Tampered | Amount photoshopped |
+| **Invalidreceipt2.jpg** | ⚠️ Incomplete | Missing GST number |
+| **Edgecase.jpg** | � Complex | Partial approval with deductions |
+
+**[📁 View all receipts →](./data/receipts/)** • **[🚀 Try live demo →](claimguard-q2y5iipuq-sankar1manis-projects.vercel.app)**
+
+---
+
 ## 📂 Project Structure
 
 ```

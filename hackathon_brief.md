@@ -18,7 +18,7 @@ We are solving "Soft Fraud" and "Complex Rules" that humans miss:
 3. **Exclusions:** Scan line items. If "Protein Powder" or "Cosmetics" are found -> Auto-Reject that specific line.
 
 ## 📂 Architecture Plan
-- /frontend: React app (Vite)
+- /frontend: React app (Vite)/ Vercel
 - /backend: Python scripts for the Agents (Vision Agent, Policy Agent)
 - /kestra: YAML flows for orchestration
-- /data: Sample receipts (Valid, Edited, Fraudulent) and Policy PDF text.
+- /data: Sample receipts (Valid, Edited, Fraudulent) and Policy text.
