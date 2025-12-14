@@ -14,7 +14,7 @@ const AnalysisResults = ({ result }) => {
     const config = statusConfig[status] || statusConfig['REJECTED'];
 
     return (
-      <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-full badge-${config.color} text-xl font-bold`}>
+      <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-full badge-${config.color} text-xl font-bold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105`}>
         <span className="text-2xl">{config.icon}</span>
         {config.text}
       </div>
@@ -99,8 +99,8 @@ const AnalysisResults = ({ result }) => {
             </div>
           </div>
 
-          {/* Merchant Info */}
-          <div className="card">
+          {/* Merchant Info with animation */}
+          <div className="card bounce-in">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Claim Details</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
@@ -150,7 +150,7 @@ const AnalysisResults = ({ result }) => {
                     return (
                       <tr
                         key={index}
-                        className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${isRejected ? 'bg-danger-50/50' : 'bg-success-50/20'
+                        className={`stagger-item border-b border-gray-100 hover:bg-gray-50 transition-all duration-200 hover:shadow-sm ${isRejected ? 'bg-danger-50/50' : 'bg-success-50/20'
                           }`}
                       >
                         <td className="py-3 px-4">

@@ -69,8 +69,8 @@ const ClaimUpload = ({ onUpload, isProcessing }) => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300 ${isDragging
-            ? 'border-primary-500 bg-primary-50 scale-[1.02]'
-            : 'border-gray-300 bg-gray-50 hover:border-primary-400 hover:bg-primary-50/50'
+          ? 'border-primary-500 bg-primary-50 scale-[1.02]'
+          : 'border-gray-300 bg-gray-50 hover:border-primary-400 hover:bg-primary-50/50'
           }`}
       >
         <input
@@ -142,7 +142,7 @@ const ClaimUpload = ({ onUpload, isProcessing }) => {
           </button>
 
           <p className="mt-4 text-xs text-gray-500">
-            Supported formats: JPG, PNG, PDF, JSON • Max size: 10MB
+            Supported formats: JPG, PNG, JSON • Max size: 10MB
           </p>
         </div>
       </div>

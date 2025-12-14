@@ -10,9 +10,20 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function App() {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStage, setProcessingStage] = useState(0);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [error, setError] = useState(null);
   const [isOnline, setIsOnline] = useState(false);
+
+  // 6-stage workflow stages
+  const processingStages = [
+    { id: 1, name: 'Uploading', icon: '📤', description: 'Uploading receipt to server' },
+    { id: 2, name: 'Vision Analysis', icon: '👁️', description: 'Extracting data with AI Vision' },
+    { id: 3, name: 'Fraud Detection', icon: '🔍', description: 'Analyzing for fraud indicators' },
+    { id: 4, name: 'Policy Check', icon: '📋', description: 'Validating against policy rules' },
+    { id: 5, name: 'Medical Review', icon: '⚕️', description: 'Checking medical necessity' },
+    { id: 6, name: 'Finalizing', icon: '✅', description: 'Generating final decision' }
+  ];
 
   // Check system health
   useEffect(() => {
@@ -38,8 +49,12 @@ function App() {
 
   const handleUpload = async (file) => {
     setIsProcessing(true);
+    setProcessingStage(0);
     setAnalysisResult(null);
     setError(null);
+
+    // Simulate stage progression for visual feedback
+    const stageTimings = [0, 300, 1000, 1500, 2000, 2500]; // Delays for each stage
 
     try {
       // Create FormData to send file
@@ -48,32 +63,56 @@ function App() {
 
       console.log('📤 Uploading file to backend:', file.name);
 
+      // Stage 1: Uploading
+      setProcessingStage(1);
+
       // Make API call to backend
       const response = await fetch(`${API_URL}/api/analyze`, {
         method: 'POST',
         body: formData,
       });
 
+      // Stage 2: Vision Analysis (simulated)
+      setTimeout(() => setProcessingStage(2), stageTimings[1]);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
         throw new Error(errorData.detail || `Server error: ${response.status}`);
       }
 
+      // Stage 3: Fraud Detection
+      setTimeout(() => setProcessingStage(3), stageTimings[2]);
+
       const data = await response.json();
       console.log('✅ Received response from backend:', data);
 
+      // Stage 4: Policy Check
+      setTimeout(() => setProcessingStage(4), stageTimings[3]);
+
+      // Stage 5: Medical Review
+      setTimeout(() => setProcessingStage(5), stageTimings[4]);
+
+      // Stage 6: Finalizing
+      setTimeout(() => setProcessingStage(6), stageTimings[5]);
+
       // Transform backend response to match AnalysisResults component expectations
       const transformedData = transformBackendResponse(data);
-      setAnalysisResult(transformedData);
+
+      // Small delay before showing results for smooth transition
+      setTimeout(() => {
+        setAnalysisResult(transformedData);
+        setIsProcessing(false);
+        setProcessingStage(0);
+      }, 3000);
 
     } catch (err) {
       console.error('❌ Error analyzing claim:', err);
       setError(err.message || 'Failed to analyze claim. Please ensure the backend server is running.');
+      setIsProcessing(false);
+      setProcessingStage(0);
 
       // Show error to user
       alert(`Error: ${err.message}\n\nPlease ensure:\n1. Backend server is running (python backend/main.py)\n2. Server is accessible at ${API_URL}`);
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -228,6 +267,127 @@ function App() {
 
             {/* Upload Component */}
             <ClaimUpload onUpload={handleUpload} isProcessing={isProcessing} />
+
+            {/* 6-Stage Progress Indicator */}
+            {isProcessing && (
+              <div className="mt-8 max-w-4xl mx-auto bounce-in">
+                <div className="card glass border-primary-200">
+                  <div className="text-center mb-6">
+                    <h3 className="text-2xl font-bold gradient-text mb-2">Processing Your Claim</h3>
+                    <p className="text-gray-600">AI-powered analysis in progress...</p>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mb-8">
+                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${(processingStage / 6) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Stage Cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {processingStages.map((stage) => {
+                      const isActive = processingStage === stage.id;
+                      const isCompleted = processingStage > stage.id;
+                      const isPending = processingStage < stage.id;
+
+                      return (
+                        <div
+                          key={stage.id}
+                          className={`p-4 rounded-lg border-2 transition-all duration-300 ${isActive
+                              ? 'border-primary-500 bg-primary-50 shadow-lg scale-105 pulse-glow-primary'
+                              : isCompleted
+                                ? 'border-success-400 bg-success-50'
+                                : 'border-gray-200 bg-gray-50 opacity-60'
+                            }`}
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <div
+                              className={`text-3xl ${isActive ? 'animate-bounce' : isCompleted ? '' : 'grayscale'
+                                }`}
+                            >
+                              {stage.icon}
+                            </div>
+                            <div className="flex-1">
+                              <h4
+                                className={`font-bold text-sm ${isActive
+                                    ? 'text-primary-700'
+                                    : isCompleted
+                                      ? 'text-success-700'
+                                      : 'text-gray-500'
+                                  }`}
+                              >
+                                {stage.name}
+                              </h4>
+                            </div>
+                            {isCompleted && (
+                              <svg
+                                className="w-5 h-5 text-success-600 animate-bounce-in"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            )}
+                            {isActive && (
+                              <div className="animate-spin">
+                                <svg
+                                  className="w-5 h-5 text-primary-600"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  ></circle>
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  ></path>
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                          <p
+                            className={`text-xs ${isActive ? 'text-primary-600' : isCompleted ? 'text-success-600' : 'text-gray-400'
+                              }`}
+                          >
+                            {stage.description}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Current Stage Message */}
+                  {processingStage > 0 && processingStage <= 6 && (
+                    <div className="mt-6 text-center animate-fade-in">
+                      <p className="text-sm text-gray-600">
+                        <span className="font-semibold text-primary-700">
+                          {processingStages[processingStage - 1].name}
+                        </span>
+                        {' • '}
+                        {processingStages[processingStage - 1].description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* History Component - Only shown on home screen */}
             <ClaimHistory onViewClaim={handleHistoryView} />
