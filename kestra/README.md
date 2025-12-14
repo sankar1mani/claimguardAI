@@ -118,14 +118,14 @@ Use the test files in the `data/` folder to test different scenarios:
 
 ### ✅ Valid Claim
 ```bash
-# Upload: data/claim_valid.json
+# Upload: data/claims/claim_valid.json
 # Expected: PARTIAL_APPROVAL
 # Approved: ₹495 (all valid medicines)
 ```
 
 ### ⚠️ Exclusion Fraud
 ```bash
-# Upload: data/claim_fraud_exclusion.json
+# Upload: data/claims/claim_fraud_exclusion.json
 # Expected: PARTIAL_APPROVAL
 # Approved: ₹570 (medicines only)
 # Rejected: ₹2,949 (Whey Protein + Moisturizer)
@@ -133,7 +133,7 @@ Use the test files in the `data/` folder to test different scenarios:
 
 ### ✂️ Room Rent Capping
 ```bash
-# Upload: data/claim_fraud_limit.json
+# Upload: data/claims/claim_fraud_limit.json
 # Expected: PARTIAL_APPROVAL
 # Approved: ₹78,437.50 (62.5% ratio applied)
 # Deducted: ₹53,337.50 (due to room rent limit)

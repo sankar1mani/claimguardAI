@@ -205,7 +205,7 @@ def main():
     """Main entry point for CLI usage"""
     if len(sys.argv) < 2:
         print("Usage: python policy_engine.py <claim_file_path>")
-        print("Example: python policy_engine.py ../data/claim_valid.json")
+        print("Example: python policy_engine.py ../data/claims/claim_valid.json")
         sys.exit(1)
     
     claim_file_path = sys.argv[1]

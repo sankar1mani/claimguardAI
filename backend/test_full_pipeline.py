@@ -155,9 +155,9 @@ def test_three_scenarios():
     policy_adjudicator = PolicyAdjudicator(policy_path="../data/policy_rules.json")
     
     scenarios = [
-        ("Valid Claim", "../data/claim_valid.json"),
-        ("Exclusion Fraud", "../data/claim_fraud_exclusion.json"),
-        ("Room Rent Limit", "../data/claim_fraud_limit.json")
+        ("Valid Claim", "../data/claims/claim_valid.json"),
+        ("Exclusion Fraud", "../data/claims/claim_fraud_exclusion.json"),
+        ("Room Rent Limit", "../data/claims/claim_fraud_limit.json")
     ]
     
     for i, (name, claim_file) in enumerate(scenarios, 1):

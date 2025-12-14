@@ -250,17 +250,17 @@ curl -X POST http://localhost:8000/api/analyze \
 We've included test data in the `data/` folder:
 
 ### ✅ Scenario 1: Valid Claim
-- **File**: `data/claim_valid.json`
+- **File**: `data/claims/claim_valid.json`
 - **Expected**: APPROVED - All items are valid medicines
 - **Amount**: ₹495 approved
 
 ### ⚠️ Scenario 2: Exclusion Fraud
-- **File**: `data/claim_fraud_exclusion.json`
+- **File**: `data/claims/claim_fraud_exclusion.json`
 - **Expected**: PARTIAL APPROVAL - Supplements rejected
 - **Amount**: ₹570 approved, ₹2,949 rejected (Whey Protein + Moisturizer)
 
 ### ✂️ Scenario 3: Room Rent Capping
-- **File**: `data/claim_fraud_limit.json`
+- **File**: `data/claims/claim_fraud_limit.json`
 - **Expected**: PARTIAL APPROVAL - Proportionate deduction applied
 - **Amount**: ₹78,437.50 approved (62.5% ratio due to room rent limit)
 

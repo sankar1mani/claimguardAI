@@ -136,12 +136,12 @@ Use the Swagger UI at http://localhost:8000/docs to test endpoints interactively
 ```bash
 # Test with valid claim
 curl -X POST http://localhost:8000/api/analyze \
-  -F "file=@../data/claim_valid.json" \
+  -F "file=@../data/claims/claim_valid.json" \
   -F "sum_insured=500000"
 
 # Test with fraud claim
 curl -X POST http://localhost:8000/api/analyze \
-  -F "file=@../data/claim_fraud_exclusion.json" \
+  -F "file=@../data/claims/claim_fraud_exclusion.json" \
   -F "sum_insured=500000"
 ```
 

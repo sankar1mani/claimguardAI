@@ -92,17 +92,17 @@ def run_all_tests():
     test_cases = [
         {
             'name': 'Valid Claim - All Medicines (Should Approve)',
-            'file': '../data/claim_valid.json',
+            'file': '../data/claims/claim_valid.json',
             'expected': 'Should be fully approved with no deductions'
         },
         {
             'name': 'Exclusion Fraud - Whey Protein + Moisturizer (Should Reject Items)',
-            'file': '../data/claim_fraud_exclusion.json',
+            'file': '../data/claims/claim_fraud_exclusion.json',
             'expected': 'Should reject Whey Protein and Moisturizer, approve medicines only'
         },
         {
             'name': 'Room Rent Limit Exceeded (Should Apply Proportionate Deduction)',
-            'file': '../data/claim_fraud_limit.json',
+            'file': '../data/claims/claim_fraud_limit.json',
             'expected': 'Should apply 62.5% deduction due to room rent cap (5000/8000)'
         }
     ]
