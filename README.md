@@ -54,14 +54,10 @@ ClaimGuard AI automates the entire insurance claim adjudication process for Indi
 - **Fraud Override**: If Vision Agent detects fraud → Entire claim REJECTED (overrides policy approval)
 
 ### ⚡ Kestra Workflow Orchestration (Key Differentiator)
-- **6-stage automated pipeline** - End-to-end claim processing without manual intervention
-- **Real-time monitoring** - Watch each stage execute live in Kestra UI
-- **Execution history** - Complete audit trail of all claim decisions
-- **Scalable architecture** - Process hundreds of claims in parallel
-- **Easy customization** - Modify workflow via YAML without code changes
-- **Automated notifications** - Email alerts for claim decisions
 
-> **💡 Why Kestra?** Unlike traditional systems requiring manual handoffs between teams, Kestra orchestrates the entire claim lifecycle automatically - from receipt upload to final decision - in one seamless workflow.
+**6-stage automated pipeline** that processes claims from upload to decision in 10-30 seconds - no manual handoffs required. Real-time monitoring, complete audit trail, and parallel execution support make this system enterprise-ready.
+
+> **💡 See the full workflow breakdown with diagrams and execution details in the [Kestra Workflow Orchestration](#-kestra-workflow-orchestration) section below.**
 
 ---
 
@@ -205,7 +201,7 @@ Watch your claims process live in the Kestra UI:
 
 ### 🚀 Try It Yourself
 
-**Access Kestra UI**: http://localhost:8080 (when running locally)
+**Access Kestra UI**: [http://localhost:8080](http://localhost:8080) (when running locally)
 
 1. Navigate to **Flows** → `claimguard.insurance` → `claim-adjudication-flow`
 2. Click **Execute** and upload a receipt
